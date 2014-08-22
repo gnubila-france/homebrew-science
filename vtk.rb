@@ -20,6 +20,8 @@ class Vtk < Formula
   depends_on :libpng => :recommended
   depends_on 'libtiff' => :recommended
   depends_on 'matplotlib' => [:python, :optional]
+  depends_on 'libxml2' => :recommended
+
 
   # If --with-qt and --with-python, then we automatically use PyQt, too!
   if build.with? 'qt'
@@ -45,9 +47,16 @@ class Vtk < Formula
       -DCMAKE_INSTALL_RPATH:STRING=#{lib}
       -DCMAKE_INSTALL_NAME_DIR:STRING=#{lib}
       -DVTK_USE_SYSTEM_EXPAT=ON
-      -DVTK_USE_SYSTEM_LIBXML2=ON
+      -DVTK_USE_SYSTEM_LIBXML2=OFF
       -DVTK_USE_SYSTEM_ZLIB=ON
     ]
+
+    if build.with? 'libxml2'
+      args << "-DLIBXML2_LIBRARIES='#{Formula["libxml2"].lib}/libxml2.so'"
+      args << "-DLIBXML2_INCLUDE_DIR='#{Formula["libxml2"].include}/libxml2'"
+    else
+      args << '-DVTK_USE_SYSTEM_LIBXML2=ON'
+    end
 
     if OS.mac?
       args << '-DIOKit:FILEPATH=#{MacOS.sdk_path}/System/Library/Frameworks/IOKit.framework'
