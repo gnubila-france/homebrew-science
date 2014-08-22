@@ -42,13 +42,16 @@ class Vtk < Formula
       -DVTK_USE_TK=OFF
       -DBUILD_TESTING=OFF
       -DBUILD_SHARED_LIBS=ON
-      -DIOKit:FILEPATH=#{MacOS.sdk_path}/System/Library/Frameworks/IOKit.framework
       -DCMAKE_INSTALL_RPATH:STRING=#{lib}
       -DCMAKE_INSTALL_NAME_DIR:STRING=#{lib}
       -DVTK_USE_SYSTEM_EXPAT=ON
       -DVTK_USE_SYSTEM_LIBXML2=ON
       -DVTK_USE_SYSTEM_ZLIB=ON
     ]
+
+    if OS.mac?
+      args << '-DIOKit:FILEPATH=#{MacOS.sdk_path}/System/Library/Frameworks/IOKit.framework'
+    end
 
     args << '-DBUILD_EXAMPLES=' + ((build.include? 'examples') ? 'ON' : 'OFF')
 
@@ -63,14 +66,22 @@ class Vtk < Formula
       args << '-DVTK_USE_COCOA=OFF'
       args << '-DVTK_USE_X=ON'
     else
-      args << '-DVTK_USE_COCOA=ON'
+      if OS.mac?
+        args << '-DVTK_USE_COCOA=ON'
+      else
+        # On Linux disable everything, will use OSMESA
+        args << '-DVTK_USE_COCOA=OFF'
+        args << '-DVTK_USE_X=OFF'
+      end
     end
 
-    unless MacOS::CLT.installed?
-      # We are facing an Xcode-only installation, and we have to keep
-      # vtk from using its internal Tk headers (that differ from OSX's).
-      args << "-DTK_INCLUDE_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers"
-      args << "-DTK_INTERNAL_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers/tk-private"
+    if OS.mac?
+      unless MacOS::CLT.installed?
+        # We are facing an Xcode-only installation, and we have to keep
+        # vtk from using its internal Tk headers (that differ from OSX's).
+        args << "-DTK_INCLUDE_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers"
+        args << "-DTK_INTERNAL_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers/tk-private"
+      end
     end
 
     args << '-DModule_vtkInfovisBoost=ON' << '-DModule_vtkInfovisBoostGraphAlgorithms=ON' if build.with? 'boost'
@@ -88,7 +99,11 @@ class Vtk < Formula
       if build.with? "python"
         args << '-DVTK_WRAP_PYTHON=ON'
         # CMake picks up the system's python dylib, even if we have a brewed one.
-        args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+        if OS.mac?
+          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+        else
+          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.so'"
+        end
         # Set the prefix for the python bindings to the Cellar
         args << "-DVTK_INSTALL_PYTHON_MODULE_DIR='#{lib}/python2.7/site-packages'"
         if build.with? 'pyqt'
