@@ -75,12 +75,19 @@ class Vtk < Formula
       args << '-DVTK_USE_COCOA=OFF'
       args << '-DVTK_USE_X=ON'
     else
+#Disable patchas do not compile with OSMESA
+#error: 'OSMesaContext' does not name a type
+#The build will switch to X11
       if OS.mac?
         args << '-DVTK_USE_COCOA=ON'
       else
-        # On Linux disable everything, will use OSMESA
-        args << '-DVTK_USE_COCOA=OFF'
-        args << '-DVTK_USE_X=OFF'
+#Disable patch as it does not compile with OSMESA
+#error: 'OSMesaContext' does not name a type
+#Switch to X11 in any case
+#        # On Linux disable everything, will use OSMESA
+#        args << '-DVTK_USE_COCOA=OFF'
+#	args << '-DVTK_USE_X=OFF'
+        args << '-DVTK_USE_X=ON'
       end
     end
 
