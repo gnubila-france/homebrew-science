@@ -9,9 +9,9 @@ end
 
 class R < Formula
   homepage 'http://www.r-project.org/'
-  url 'http://cran.rstudio.com/src/base/R-3/R-3.1.1.tar.gz'
-  mirror 'http://cran.r-project.org/src/base/R-3/R-3.1.1.tar.gz'
-  sha1 'e974ecc92e49266529e8e791e02a80c75e50b696'
+  url 'http://cran.rstudio.com/src/base/R-3/R-3.1.2.tar.gz'
+  mirror 'http://cran.r-project.org/src/base/R-3/R-3.1.2.tar.gz'
+  sha1 '93809368e5735a630611633ac1fa99010020c5d6'
 
   head do
     url 'https://svn.r-project.org/R/trunk', :using => RDownloadStrategy
@@ -54,6 +54,7 @@ class R < Formula
 
     if build.with? "openblas"
       args << "--with-blas=-L#{Formula["openblas"].opt_lib} -lopenblas" << "--with-lapack"
+      ENV.append "LDFLAGS", "-L#{Formula["openblas"].opt_lib}"
     elsif build.with? "accelerate"
       args << "--with-blas=-framework Accelerate" << "--with-lapack"
       # Fall back to Rblas without-accelerate or -openblas
@@ -63,7 +64,8 @@ class R < Formula
     args << '--without-x' if build.without? 'x11'
 
     # Also add gettext include so that libintl.h can be found when installing packages.
-    ENV.append "CPPFLAGS", "-I#{Formula['gettext'].opt_include}"
+    ENV.append "CPPFLAGS", "-I#{Formula["gettext"].opt_include}"
+    ENV.append "LDFLAGS",  "-L#{Formula["gettext"].opt_lib}"
 
     # Sometimes the wrong readline is picked up.
     ENV.append "CPPFLAGS", "-I#{Formula['readline'].opt_include}"
@@ -80,16 +82,16 @@ class R < Formula
       system "make check 2>&1 | tee make-check.log" if build.with? 'check'
       system "make install"
 
-      # Link binaries and manpages from the Framework
+      # Link binaries, headers, libraries, & manpages from the Framework
       # into the normal locations
-      bin.mkpath
-      man1.mkpath
-
       if OS.mac?
-        ln_s prefix+"R.framework/Resources/bin/R", bin
-        ln_s prefix+"R.framework/Resources/bin/Rscript", bin
-        ln_s prefix+"R.framework/Resources/man1/R.1", man1
-        ln_s prefix+"R.framework/Resources/man1/Rscript.1", man1
+        bin.install_symlink prefix/"R.framework/Resources/bin/R"
+        bin.install_symlink prefix/"R.framework/Resources/bin/Rscript"
+        frameworks.install_symlink prefix/"R.framework"
+        include.install_symlink prefix/"R.framework/Resources/include/R.h"
+        lib.install_symlink prefix/"R.framework/Resources/lib/libR.dylib"
+        man1.install_symlink prefix/"R.framework/Resources/man1/R.1"
+        man1.install_symlink prefix/"R.framework/Resources/man1/Rscript.1"
       end
 
       bash_completion.install resource('completion')
@@ -99,14 +101,12 @@ class R < Formula
 
     cd "src/nmath/standalone" do
       system "make"
-      include.mkpath
       ENV.deparallelize # Serialized installs, please
       system "make", "install"
 
       if OS.mac?
-        lib.mkpath
-        ln_s prefix+"R.framework/Versions/3.1/Resources/lib/libRmath.dylib", lib
-        ln_s prefix+"R.framework/Versions/3.1/Resources/include/Rmath.h", include
+        lib.install_symlink prefix/"R.framework/Versions/3.1/Resources/lib/libRmath.dylib"
+        include.install_symlink prefix/"R.framework/Versions/3.1/Resources/include/Rmath.h"
       end
     end
 
@@ -121,6 +121,9 @@ class R < Formula
   def caveats; <<-EOS.undent
     To enable rJava support, run the following command:
       R CMD javareconf JAVA_CPPFLAGS=-I/System/Library/Frameworks/JavaVM.framework/Headers
+    If you've installed a version of Java other than the default, you might need to instead use:
+      R CMD javareconf JAVA_CPPFLAGS='-I/System/Library/Frameworks/JavaVM.framework/Headers -I/Library/Java/JavaVirtualMachines/jdk<version>.jdk/'
+      (where <version> can be found by running `java -version` or `locate jni.h`)
     EOS
   end if build.without? "librmath-only"
 end

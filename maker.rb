@@ -3,8 +3,8 @@ require 'formula'
 class Maker < Formula
   homepage 'http://www.yandell-lab.org/software/maker.html'
   #doi '10.1101/gr.6743907' => 'MAKER', '10.1186/1471-2105-12-491' => 'MAKER2', '10.1104/pp.113.230144' => 'MAKER-P'
-  url 'http://yandell.topaz.genetics.utah.edu/maker_downloads/static/maker-2.31.5.tgz'
-  sha1 '99de5cd075951fb100f6bafb23481e8d9e54724f'
+  url "http://yandell.topaz.genetics.utah.edu/maker_downloads/static/maker-2.31.6.tgz"
+  sha1 "6cdb9adbf93fa66c0340e9d61404a8c3f6fd917c"
 
   depends_on 'augustus' => :optional
   depends_on 'blast' => :recommended
@@ -12,8 +12,8 @@ class Maker < Formula
   depends_on 'infernal' => :optional
   depends_on 'mir-prefer' => :optional
   depends_on :mpi => :optional
-  depends_on 'repeatmasker' => :optional
-  depends_on 'snap' => :optional
+  depends_on 'repeatmasker' => :recommended
+  depends_on 'snap' => :recommended
   depends_on 'snoscan' => :optional
   depends_on 'trnascan' => :optional
   # No formula: depends_on 'genemark-es' => :optional
@@ -26,7 +26,7 @@ class Maker < Formula
   depends_on 'File::Which' => :perl
   depends_on 'IO::All' => :perl
   depends_on 'IO::Prompt' => :perl
-  depends_on 'Inline' => :perl
+  depends_on "Inline::C" => [:perl, "Inline"]
   depends_on 'Perl::Unsafe::Signals' => :perl
   depends_on 'PerlIO::gzip' => :perl
   depends_on 'forks' => :perl
