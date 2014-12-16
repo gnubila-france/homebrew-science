@@ -6,6 +6,7 @@ class Octave < Formula
   mirror   "http://ftp.gnu.org/gnu/octave/octave-3.8.1.tar.bz2"
   sha1     "2951aeafe58d562672feb80dd8c3cfe0643a5087"
   head     "http://www.octave.org/hg/octave", :branch => "gui-release", :using => :hg
+  revision 1
 
   stable do
     # Allows the arrow keys to page through command history.
@@ -14,6 +15,22 @@ class Octave < Formula
       url "https://savannah.gnu.org/bugs/download.php?file_id=30734"
       sha1 "e8fb39b7ca1525d67e6d24f3c189b441b60fcdab"
     end
+
+    # Allows clang 3.5 to compile with a recent libc++ release.
+    # See: https://savannah.gnu.org/bugs/?43298
+    patch do
+      url "https://gist.github.com/tchaikov/6ce5f697055b0756126a/raw/4fc94a1fa1d5b032f8586ce3ab0015b04351426f/octave-clang3.5-fix.patch"
+      sha1 "6e5c0d8f6b07803152c8a1caad39a113fc8b8d0a"
+    end
+  end
+
+  head do
+    # Allows clang 3.5 to compile with a recent libc++ release.
+    # See: https://savannah.gnu.org/bugs/?43298
+    patch do
+      url "https://gist.github.com/schoeps/ec25b19bf30f97d33cdb/raw/6f164415e5e0fb556c1cfc2b039985d25dfad872/octave-clang3.5-fix.patch"
+      sha1 "c3209b0bebd69ff5b9fa2d0463c8034d53f99225"
+    end
   end
 
   # Allows mkoctfile to process "-framework vecLib" properly.
@@ -21,13 +38,6 @@ class Octave < Formula
   patch do
     url "https://savannah.gnu.org/patch/download.php?file_id=31072"
     sha1 "19f2dcaf636f1968c4b1639797415f83fb21d5a3"
-  end
-
-  # Allows clang 3.5 to compile with a recent libc++ release.
-  # See: https://savannah.gnu.org/bugs/?43298
-  patch do
-    url "https://gist.github.com/tchaikov/6ce5f697055b0756126a/raw/4fc94a1fa1d5b032f8586ce3ab0015b04351426f/octave-clang3.5-fix.patch"
-    sha1 "6e5c0d8f6b07803152c8a1caad39a113fc8b8d0a"
   end
 
   skip_clean "share/info" # Keep the docs

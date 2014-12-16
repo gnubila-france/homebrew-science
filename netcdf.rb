@@ -5,11 +5,22 @@ class Netcdf < Formula
   url "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.2.tar.gz"
   mirror "http://www.gfd-dennou.org/library/netcdf/unidata-mirror/netcdf-4.3.2.tar.gz"
   sha1 "6e1bacab02e5220954fe0328d710ebb71c071d19"
+  revision 1
+
+  bottle do
+    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
+    cellar :any
+    sha1 "af12e8d6b0cf4afee76f944ae97ccb174e297819" => :yosemite
+    sha1 "d20838cd139c3022429ba0fa28e4ba2f6ef2ae3c" => :mavericks
+    sha1 "a4857f759d7b05df9fb318c7f2a78b400e5c4db8" => :mountain_lion
+  end
 
   deprecated_option "enable-fortran" => "with-fortran"
+  deprecated_option "disable-cxx" => "without-cxx"
+  deprecated_option "enable-cxx-compat" => "with-cxx-compat"
 
-  option "disable-cxx", "Don't compile C++ bindings"
-  option "enable-cxx-compat", "Compile C++ bindings for compatibility"
+  option "without-cxx", "Don't compile C++ bindings"
+  option "with-cxx-compat", "Compile C++ bindings for compatibility"
   option "without-check", "Disable checks (not recommended)"
 
   depends_on :fortran => :optional
@@ -67,13 +78,13 @@ class Netcdf < Formula
     ]
 
     args = common_args.clone
-    args.concat %w[--enable-netcdf4 --disable-doxygen]
+    args << "--enable-netcdf4" << "--disable-doxygen"
 
     system "./configure", *args
     system "make"
     ENV.deparallelize if build.with? "check" # Required for `make check`.
-    system "make check" if build.with? "check"
-    system "make install"
+    system "make", "check" if build.with? "check"
+    system "make", "install"
 
     # Add newly created installation to paths so that binding libraries can
     # find the core libs.
@@ -81,25 +92,31 @@ class Netcdf < Formula
     ENV.prepend "CPPFLAGS", "-I#{include}"
     ENV.prepend "LDFLAGS", "-L#{lib}"
 
-    resource("cxx").stage do
-      system "./configure", *common_args
-      system "make"
-      system "make check" if build.with? "check"
-      system "make install"
-    end unless build.include? "disable-cxx"
+    if build.with? "cxx"
+      resource("cxx").stage do
+        system "./configure", *common_args
+        system "make"
+        system "make", "check" if build.with? "check"
+        system "make", "install"
+      end
+    end
 
-    resource("cxx-compat").stage do
-      system "./configure", *common_args
-      system "make"
-      system "make check" if build.with? "check"
-      system "make install"
-    end if build.include? "enable-cxx-compat"
+    if build.with? "cxx-compat"
+      resource("cxx-compat").stage do
+        system "./configure", *common_args
+        system "make"
+        system "make", "check" if build.with? "check"
+        system "make", "install"
+      end
+    end
 
-    resource("fortran").stage do
-      system "./configure", *common_args
-      system "make"
-      system "make check" if build.with? "check"
-      system "make install"
-    end if build.with? "fortran"
+    if build.with? "fortran"
+      resource("fortran").stage do
+        system "./configure", *common_args
+        system "make"
+        system "make", "check" if build.with? "check"
+        system "make", "install"
+      end
+    end
   end
 end

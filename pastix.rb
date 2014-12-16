@@ -5,6 +5,14 @@ class Pastix < Formula
   url 'https://gforge.inria.fr/frs/download.php/file/34225/pastix_5.2.2.18.tar.bz2'
   sha1 'ab768208e6a2607d9868bb42117b2b9364e2d25a'
   head 'git://scm.gforge.inria.fr/ricar/ricar.git'
+  revision 1
+
+  bottle do
+    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
+    sha1 "2ba1d8e214526df6ef44dbd797287ce7e91984a7" => :yosemite
+    sha1 "32231bc94ac20eb35e7c30bad3aac590f4fe049a" => :mavericks
+    sha1 "06c8de3b1b3a5348717c9337e56e5e527b1baf07" => :mountain_lion
+  end
 
   depends_on 'scotch'   => :build
   depends_on 'hwloc'
