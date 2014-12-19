@@ -132,8 +132,12 @@ if build.with? "libxml2"
     mkdir "build" do
       if build.with? "python"
         args << "-DVTK_WRAP_PYTHON=ON"
-        # CMake picks up the system"s python dylib, even if we have a brewed one.
-        args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+        # CMake picks up the system"s python lib, even if we have a brewed one.
+        if OS.mac?
+          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+        else
+          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.so'"
+        end
         # Set the prefix for the python bindings to the Cellar
         args << "-DVTK_INSTALL_PYTHON_MODULE_DIR='#{lib}/python2.7/site-packages'"
 
