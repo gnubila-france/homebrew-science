@@ -77,8 +77,12 @@ class Insighttoolkit < Formula
           -DModule_ITKVtkGlue=ON
           -DCMAKE_C_FLAGS='-ansi'
         ]
-        # CMake picks up the system's python dylib, even if we have a brewed one.
-        args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+        # CMake picks up the system's python, even if we have a brewed one.
+        if OS.mac?
+          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+        else
+          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.so'"
+        end
       end
       system "cmake", *args
       system "make", "install"
