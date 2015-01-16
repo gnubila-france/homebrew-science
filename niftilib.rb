@@ -7,9 +7,15 @@ class Niftilib < Formula
 
   def install
     ENV.deparallelize
+    if OS.mac?
     system "make"
     bin.install Dir['bin/*']
     lib.install Dir['lib/*']
     include.install Dir['include/*']
+    else 
+      system "cmake -Wno-dev -G'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=#{prefix}"
+      system "make"
+      system "make install"
+    end
   end
 end
