@@ -12,8 +12,8 @@ class NumpyHasHeaders < Requirement
   end
   def message; <<-EOS.undent
     lp_solve requires NumPy headers not provided by Apple.
-    Install numpy via the Homebrew/python formula:
-      `brew tap homebrew/python && brew install numpy`
+    Install numpy via the gnubila-france/python formula:
+      `brew tap gnubila-france/python && brew install numpy`
     EOS
   end
 end
