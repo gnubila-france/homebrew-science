@@ -150,6 +150,7 @@ class Vtk5 < Formula
       end
       args << ".."
       system "cmake", *args
+      system "cat build/CMakeFiles/CMake*.log"
       system "make"
       system "make", "install"
     end
