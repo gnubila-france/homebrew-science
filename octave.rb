@@ -115,7 +115,7 @@ class Octave < Formula
   def install
     ENV.m64 if MacOS.prefer_64_bit?
     ENV.append_to_cflags "-D_REENTRANT"
-    ENV.append "LDFLAGS", "-L#{Formula["readline"].opt_lib} -lreadline" if build.with? "readline"
+    ENV.append "LDFLAGS", "-L#{Formula["readline"].opt_lib} -lreadline" if build.with? "readline" ? if OS.mac?
     ENV["JAVA_HOME"] = `/usr/libexec/java_home`.chomp! if OS.mac?
 
     args = [ "--prefix=#{prefix}" ]
