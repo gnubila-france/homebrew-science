@@ -20,9 +20,11 @@ class SuiteSparse < Formula
     # SuiteSparse doesn't like to build in parallel
     ENV.deparallelize
 
-    # Switch to the Mac base config, per SuiteSparse README.txt
-    system "mv SuiteSparse_config/SuiteSparse_config.mk SuiteSparse_config/SuiteSparse_config_orig.mk"
-    system "mv SuiteSparse_config/SuiteSparse_config_Mac.mk SuiteSparse_config/SuiteSparse_config.mk"
+    if OS.mac?
+      # Switch to the Mac base config, per SuiteSparse README.txt
+      system "mv SuiteSparse_config/SuiteSparse_config.mk SuiteSparse_config/SuiteSparse_config_orig.mk"
+      system "mv SuiteSparse_config/SuiteSparse_config_Mac.mk SuiteSparse_config/SuiteSparse_config.mk"
+    end
 
     make_args = ["INSTALL_LIB=#{lib}", "INSTALL_INCLUDE=#{include}"]
     make_args << "BLAS=" + ((build.with? 'openblas') ? "-L#{Formula['openblas'].opt_lib} -lopenblas" : "-framework Accelerate")
