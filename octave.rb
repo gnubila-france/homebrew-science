@@ -149,7 +149,7 @@ class Octave < Formula
     end
 
     args << "--without-zlib"     if build.without? "zlib"
-    args << "--with-x=no"     #We don't need X11 for Mac at all
+    args << "--with-x=no" if OS.mac?    #We don't need X11 for Mac at all
 
     system "./bootstrap" if build.head?
 
