@@ -163,7 +163,7 @@ class Octave < Formula
 
     # Prevent the potential "-isystem/..." CPPFLAGS value from breaking MOC
     # The counter part is that no flags are provided there anymore
-    inreplace "libgui/Makefile.am", /MOC_OCTAVE_CPPFLAGS%/, 'MOC_OCTAVE_CPPFLAGS=""' if OS.linux?
+    inreplace "libgui/Makefile.am", /^MOC_OCTAVE_CPPFLAGS =.*/, 'MOC_OCTAVE_CPPFLAGS=""' if OS.linux?
 
     if build.with? "gnuplot" and build.with? "gui"
       # ~/.octaverc takes precedence over site octaverc
