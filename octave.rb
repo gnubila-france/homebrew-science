@@ -161,6 +161,10 @@ class Octave < Formula
     # can cause linking problems.
     inreplace "src/mkoctfile.in.cc", /%OCTAVE_CONF_OCT(AVE)?_LINK_(DEPS|OPTS)%/, '""'
 
+    # Prevent the potential "-isystem/..." CPPFLAGS value from breaking MOC
+    # The counter part is that no flags are provided there anymore
+    inreplace "libgui/Makefile.am", /MOC_OCTAVE_CPPFLAGS%/, 'MOC_OCTAVE_CPPFLAGS=""' if OS.linux?
+
     if build.with? "gnuplot" and build.with? "gui"
       # ~/.octaverc takes precedence over site octaverc
       open("scripts/startup/local-rcfile", "a") do |file|
