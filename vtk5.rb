@@ -148,7 +148,7 @@ class Vtk5 < Formula
           args << "-DSIP_PYQT_DIR="#{HOMEBREW_PREFIX}/share/sip""
         end
       end
-      args << ".. || ( more CMakeFiles/* |cat; exit 1 )"
+      args << ".."
       system "cmake", *args
       system "make"
       system "make", "install"
