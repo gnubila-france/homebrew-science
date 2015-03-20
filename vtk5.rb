@@ -148,8 +148,8 @@ class Vtk5 < Formula
           args << "-DSIP_PYQT_DIR="#{HOMEBREW_PREFIX}/share/sip""
         end
       end
-      args << ".."
-      system "cmake -DCMAKE_INSTALL_PREFIX=/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/vtk5/5.10.1_1 -DCMAKE_BUILD_TYPE=None -DCMAKE_FIND_FRAMEWORK=LAST -DCMAKE_VERBOSE_MAKEFILE=ON -Wno-dev -DVTK_REQUIRED_OBJCXX_FLAGS='' -DVTK_USE_CARBON=OFF -DVTK_USE_TK=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH:STRING=/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/vtk5/5.10.1_1/lib/vtk-5.10 -DCMAKE_INSTALL_NAME_DIR:STRING=/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/vtk5/5.10.1_1/lib/vtk-5.10 -DVTK_USE_SYSTEM_EXPAT=ON -DVTK_USE_SYSTEM_LIBXML2=ON -DVTK_USE_SYSTEM_ZLIB=ON -DLIBXML2_LIBRARIES='/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/libxml2/2.9.2/lib/libxml2.so' -DLIBXML2_INCLUDE_DIR='/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/libxml2/2.9.2/include/libxml2' -DBUILD_EXAMPLES=OFF -DVTK_USE_X=ON -DVTK_USE_BOOST=ON -DVTK_USE_SYSTEM_HDF5=ON -DVTK_USE_SYSTEM_JPEG=ON -DVTK_USE_SYSTEM_PNG=ON -DVTK_USE_SYSTEM_TIFF=ON -DVTK_WRAP_PYTHON=ON -DPYTHON_LIBRARY='/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/python/2.7.9/lib/libpython2.7.so' -DVTK_PYTHON_SETUP_ARGS:STRING='--prefix=/opt/vo_soft/vo.neugrid.eu/umcp-91ef7a2/linuxbrew/Cellar/vtk5/5.10.1_1 --single-version-externally-managed --record=installed.txt' || ( more CMakeFiles/* |cat; exit 1 )"
+      args << ".. || ( more CMakeFiles/* |cat; exit 1 )"
+      system "cmake", *args
       system "make"
       system "make", "install"
     end
