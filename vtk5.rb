@@ -132,6 +132,8 @@ class Vtk5 < Formula
 
     ENV.cxx11 if build.cxx11?
 
+    system 'sed -i "s|png_set_gray_1_2_4_to_8|png_set_expand_gray_1_2_4_to_8|g" IO/vtkPNGReader.cxx' if build.with? "libpng"
+
     mkdir "build" do
       if build.with? "python"
         args << "-DVTK_WRAP_PYTHON=ON"
