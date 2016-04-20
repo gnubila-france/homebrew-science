@@ -1,15 +1,14 @@
-require "formula"
-
 class Hdf5 < Formula
+  desc "File format designed to store large amounts of data"
   homepage "http://www.hdfgroup.org/HDF5"
-  url "http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/hdf5-1.8.14.tar.bz2"
-  sha1 "3c48bcb0d5fb21a3aa425ed035c08d8da3d5483a"
+  url "https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2"
+  sha256 "13aaae5ba10b70749ee1718816a4b4bfead897c2fcb72c24176e759aec4598c6"
+  revision 1
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    sha1 "8be7cc59b05b0018bc22acd967ca1684a5406f35" => :yosemite
-    sha1 "be1e4803cc7f5c38ac0d70cf891c4a34891b13de" => :mavericks
-    sha1 "963c82109013f4bb9e7286106dc453f82d1f59be" => :mountain_lion
+    sha256 "3ef70c3ba3d08e2e14f055d9fb3af6368a8cb3d9a825634fb30b83c66d648b1b" => :el_capitan
+    sha256 "1fe2487ac2e3160509cd10c26437c278b9be713fd318a49982aa38d167cb65a7" => :yosemite
+    sha256 "c09c07bff0b22f1838b51f2eb0e70ccf04be903f6b3821fc7d26403f161f4cc5" => :mavericks
   end
 
   deprecated_option "enable-fortran" => "with-fortran"
@@ -19,15 +18,18 @@ class Hdf5 < Formula
   deprecated_option "enable-cxx" => "with-cxx"
 
   option :universal
-  option "without-check", "Skip build-time tests"
-  option "with-threadsafe", "Trade performance and C++ or Fortran support for thread safety"
-  option "with-fortran2003", "Compile Fortran 2003 bindings. Requires with-fortran"
-  option "with-cxx", "Compile C++ bindings"
+  option "with-check", "Run build-time tests"
+  option "with-threadsafe", "Trade performance for C API thread-safety"
+  option "with-fortran2003", "Compile Fortran 2003 bindings (requires --with-fortran)"
+  option "with-mpi", "Compile with parallel support (unsupported with thread-safety)"
+  option "without-cxx", "Disable the C++ interface"
+  option "with-unsupported", "Allow unsupported combinations of configure options"
   option :cxx11
 
   depends_on :fortran => :optional
   depends_on "szip"
   depends_on :mpi => [:optional, :cc, :cxx, :f90]
+  depends_on "zlib" unless OS.mac?
 
   def install
     ENV.universal_binary if build.universal?
@@ -37,38 +39,51 @@ class Hdf5 < Formula
       --enable-production
       --enable-debug=no
       --disable-dependency-tracking
-      --with-zlib=/usr
+      --with-zlib=#{OS.mac? ? "/usr" : Formula["zlib"].opt_prefix}
       --with-szlib=#{Formula["szip"].opt_prefix}
-      --enable-filters=all
       --enable-static=yes
       --enable-shared=yes
     ]
+    args << "--enable-unsupported" if build.with? "unsupported"
+    args << "--enable-threadsafe" << "--with-pthread=/usr" if build.with? "threadsafe"
 
-    args << "--enable-parallel" if build.with? "mpi"
-
-    if build.with? "threadsafe"
-      raise "--enable-threadsafe conflicts with Fortran bindings" if build.with? "fortran"
-      raise "--enable-threadsafe conflicts with C++ support" if build.cxx11? or build.with? "cxx"
-      args.concat %w[--with-pthread=/usr --enable-threadsafe]
+    if build.with?("cxx") && build.without?("mpi")
+      args << "--enable-cxx"
     else
-      ENV.cxx11 if build.cxx11?
-      args << "--enable-cxx" if build.cxx11? or build.with? "cxx"
+      args << "--disable-cxx"
+    end
 
-      if build.with? "fortran"
-        args << "--enable-fortran"
-        args << "--enable-fortran2003" if build.with? "fortran2003"
-      end
+    if build.with? "fortran"
+      args << "--enable-fortran"
+      args << "--enable-fortran2003" if build.with? "fortran2003"
+    else
+      args << "--disable-fortran"
     end
 
     if build.with? "mpi"
-      ENV["CC"] = "mpicc"
-      ENV["FC"] = "mpif90"
+      args << "--enable-parallel"
+      ENV["CC"] = ENV["MPICC"]
+      ENV["CXX"] = ENV["MPICXX"]
+      ENV["FC"] = ENV["MPIFC"]
     end
 
     system "./configure", *args
     system "make"
-    system "make", "check" if build.with? "check"
+    system "make", "check" if build.with?("check") || build.bottle?
     system "make", "install"
-    share.install "#{lib}/libhdf5.settings"
+  end
+
+  test do
+    (testpath/"test.c").write <<-EOS.undent
+      #include <stdio.h>
+      #include "hdf5.h"
+      int main()
+      {
+        printf(\"%d.%d.%d\\n\",H5_VERS_MAJOR,H5_VERS_MINOR,H5_VERS_RELEASE);
+        return 0;
+      }
+    EOS
+    system "h5cc", "test.c"
+    assert_match(/#{version}/, shell_output("./a.out"))
   end
 end

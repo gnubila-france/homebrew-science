@@ -1,13 +1,19 @@
-require "formula"
-
 class Nauty < Formula
   homepage "http://cs.anu.edu.au/~bdm/nauty/"
-  url "http://cs.anu.edu.au/~bdm/nauty/nauty24r2.tar.gz"
-  version "24r2"
-  sha1 "3f012beb399a9340f77d0104bf1c9bf1100e8286"
+  url "http://cs.anu.edu.au/~bdm/nauty/nauty25r9.tar.gz"
+  version "25r9"
+  sha256 "602d0e2e5ab1bdc84ab69f75ebc065833501bd2875cb07b1bb4274e3dd632825"
+
+  bottle do
+    cellar :any
+    sha256 "d144e9debed572d69471b303ce1dc8b08ca56a127e278fb51a747a6934bd0d51" => :yosemite
+    sha256 "990534538b4b736801e1fb1775216124492c184b623bdcc6803e0e25b3e8bce6" => :mavericks
+    sha256 "edeee6cb888c572c95ff3e206d1f3909fcd132f486f2d0cb86575ab9f699c2eb" => :mountain_lion
+  end
 
   deprecated_option "run-tests" => "with-checks"
-  option "without-checks", "Runs the included test programs"
+
+  option "without-checks", "Skip building the included test programs"
 
   def install
     system "./configure", "--disable-debug", "--disable-dependency-tracking",
@@ -15,16 +21,19 @@ class Nauty < Formula
     system "make", "all"
     system "make", "checks" if build.with? "checks"
 
-    bin.install %w{ NRswitchg addedgeg amtog biplabg catg complg copyg countg
+    bin.install %w[
+      NRswitchg addedgeg amtog biplabg catg complg copyg countg
       deledgeg directg dreadnaut dretog genbg geng genrang gentourng labelg
-      listg multig newedgeg pickg planarg shortg showg }
+      linegraphg listg multig newedgeg pickg planarg ranlabg shortg showg subdivideg
+      watercluster2
+    ]
 
-    prefix.install "nug.pdf"
+    prefix.install "nug25.pdf"
   end
 
   def caveats; <<-EOS.undent
     User guide was saved locally to:
-      #{prefix}/nug.pdf
+      #{opt_prefix}/nug25.pdf
     EOS
   end
 end

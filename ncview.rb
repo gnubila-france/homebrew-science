@@ -1,59 +1,27 @@
-require 'formula'
-
 class Ncview < Formula
-  homepage 'http://meteora.ucsd.edu/~pierce/ncview_home_page.html'
-  url 'ftp://cirrus.ucsd.edu/pub/ncview/ncview-2.1.2.tar.gz'
-  mirror 'https://fossies.org/linux/misc/ncview-2.1.2.tar.gz'
-  sha1 '425b0f5d505af9c1f974903435af385582be7ae4'
+  desc "Visual browser for netCDF format files"
+  homepage "http://meteora.ucsd.edu/~pierce/ncview_home_page.html"
+  url "ftp://cirrus.ucsd.edu/pub/ncview/ncview-2.1.7.tar.gz"
+  mirror "https://fossies.org/linux/misc/ncview-2.1.7.tar.gz"
+  sha256 "a14c2dddac0fc78dad9e4e7e35e2119562589738f4ded55ff6e0eca04d682c82"
+
+  bottle do
+    sha256 "8b3584cf81b5af815ac5b356c3ae1c8f46b7bffbfa0a4fb3507cb82249194bd3" => :el_capitan
+    sha256 "acf3fa15854393999dd3b00a2253d1940957c32fff842cc619cefb172e844311" => :yosemite
+    sha256 "2ad7d9a022a639febceb28b23476b7b1cec993f22987e425e178b0e450de19e5" => :mavericks
+  end
 
   depends_on :x11
   depends_on "netcdf"
-
-  # Disable a block in configure that tries to pass an RPATH to the compiler.
-  # The code guesses wrong which causes the linking step to fail.
-  patch :DATA
+  depends_on "udunits"
 
   def install
     system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}"
-    system "make install"
+    system "make", "install"
+  end
+
+  test do
+    assert_match /Ncview #{version} /, shell_output("#{bin}/ncview -c 2>&1")
   end
 end
-
-__END__
-Don't try to mess with the compiler rpath. Just not a good idea.
-
-diff --git a/configure b/configure
-index b80ae96..a650f6f 100755
---- a/configure
-+++ b/configure
-@@ -8672,29 +8672,6 @@ if test x$CC_TEST_SAME != x$NETCDF_CC_TEST_SAME; then
- 	exit -1
- fi
- 
--#----------------------------------------------------------------------------------
--# Construct our RPATH flags.  Idea here is that we have LDFLAGS that might look,
--# for example, something like this:
--#	LIBS="-L/usr/local/lib -lnetcdf -L/home/pierce/lib -ludunits"
--# We want to convert this to -rpath flags suitable for the compiler, which would
--# have this format:
--#	"-Wl,-rpath,/usr/local/lib -Wl,-rpath,/home/pierce/lib"
--#
--# As a safety check, I only do this for the GNU compiler, as I don't know if this
--# is anything like correct syntax for other compilers.  Note that this *does* work
--# for the Intel icc compiler, but also that the icc compiler sets $ac_compiler_gnu
--# to "yes".  Go figure.
--#----------------------------------------------------------------------------------
--if test x$ac_compiler_gnu = xyes; then
--	RPATH_FLAGS=""
--	for word in $UDUNITS2_LDFLAGS $NETCDF_LDFLAGS; do
--		if test `expr $word : -L/` -eq 3; then
--			RPDIR=`expr substr $word 3 999`;
--			RPATH_FLAGS="$RPATH_FLAGS -Wl,-rpath,$RPDIR"
--		fi
--	done
--
--fi
- 
- 
- ac_config_files="$ac_config_files Makefile src/Makefile"

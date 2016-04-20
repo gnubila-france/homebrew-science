@@ -1,17 +1,14 @@
-require "formula"
-
 class Lis < Formula
   homepage "http://www.ssisc.org/lis"
   url "http://www.ssisc.org/lis/dl/lis-1.4.34.tar.gz"
-  sha1 "60b08e4428c8f02e545b07817efef212dd2fb9df"
+  sha256 "e25fb5ef0c52fa0c66efab626da7d1a4b4082776173ffce632a034ab73a4d292"
   revision 1
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
     cellar :any
-    sha1 "0c3ee087d95296e10436630068382a1f584c74b8" => :yosemite
-    sha1 "bee267db184712cd22f6c581d55bfa73ca26c79d" => :mavericks
-    sha1 "60b431fbda6503a65506ee04f7adf091e0302338" => :mountain_lion
+    sha256 "348aaa7e974831ab77f135b45ebb48ce0e0580af06eec13b360139376a17150b" => :yosemite
+    sha256 "a37f461bc63941b18e2c0f1648f13ba2818e06116f9acdfae73e3a1c3d950ca2" => :mavericks
+    sha256 "71604623d66bcf4d9a26baf02d3f3439393051b86b83dfae4c9521b795f7b896" => :mountain_lion
   end
 
   option "without-check", "Skip build-time checks (not recommended)"

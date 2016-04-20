@@ -1,17 +1,35 @@
-require 'formula'
-
 class Libsequence < Formula
-  homepage 'http://molpopgen.org/software/libsequence.html'
-  url 'https://github.com/molpopgen/libsequence/archive/1.8.2.tar.gz'
-  sha1 '11cce742140146f9a3fc97287a6af9e11358563e'
-  head 'https://github.com/molpopgen/libsequence.git'
+  homepage "https://molpopgen.github.io/libsequence/"
+  # tag "bioinformatics"
+  # doi "10.1093/bioinformatics/btg316"
+  url "https://github.com/molpopgen/libsequence/archive/1.8.4.tar.gz"
+  sha256 "f45a04ae03d8fa6f2eae0a3cec72686028071c851c355e4aab84859bb2cb394a"
+  head "https://github.com/molpopgen/libsequence.git"
 
-  depends_on 'boost' => :build
-  depends_on 'gsl'
+  bottle do
+    cellar :any
+    revision 2
+    sha256 "3488ce470dd77c1bb26cd28d2104393de35a8c780ad89e83f499ec5b59813c87" => :yosemite
+    sha256 "6ba89329001cdacc6434016f78d1053e760a1468363b98e1b8b553205bc850a6" => :mavericks
+    sha256 "a1d89ba3fa084506185ed5842b6a8b5709281591178a9a3df414edb22d459463" => :mountain_lion
+  end
+
+  cxx11 = OS.linux? || MacOS.version > :mountain_lion ? [] : ["c++11"]
+
+  depends_on "boost" => cxx11
+  depends_on "gsl"
+
+  needs :cxx11
 
   def install
-    system "./configure", "--enable-shared=no", "--prefix=#{prefix}"
+    ENV.cxx11
+    system "./configure", "--prefix=#{prefix}",
+                          "--docdir=#{doc}",
+                          "--mandir=#{man}",
+                          "--disable-dependency-tracking",
+                          "--disable-silent-rules"
     system "make"
-    system "make install"
+    system "make", "check"
+    system "make", "install"
   end
 end

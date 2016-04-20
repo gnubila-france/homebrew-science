@@ -1,16 +1,35 @@
-require "formula"
-
 class Jellyfish < Formula
+  desc "Fast, memory-efficient counting of DNA k-mers"
   homepage "http://www.genome.umd.edu/jellyfish.html"
-  url "ftp://ftp.genome.umd.edu/pub/jellyfish/jellyfish-2.1.3.tar.gz"
-  sha1 "b115dc7066cf24ab4026d8d8d429f094f3917cf2"
+  # doi "10.1093/bioinformatics/btr011"
+  # tag "bioinformatics"
 
-  #head "https://github.com/gmarcais/Jellyfish.git"
-  #doi "10.1093/bioinformatics/btr011"
+  url "https://github.com/gmarcais/Jellyfish/releases/download/v2.2.4/jellyfish-2.2.4.tar.gz"
+  sha256 "d31a71477c638caaeeacbede644870a7be26aa786919f4dd722b0a8fadb7dd28"
+
+  bottle do
+    cellar :any
+    sha256 "634c642f093e0dad9112b527588a87a6313fb2cb12ce3c09ce67f4f749d373d1" => :el_capitan
+    sha256 "5be96154d0ee630a904748790afb65316ac65744473b4d71e0f7a3e65e9d55c5" => :yosemite
+    sha256 "02dacc8d217f7d281723a829b26cb4c5458e2796c8d9ea343bfd5efa40844785" => :mavericks
+  end
+
+  head do
+    url "https://github.com/gmarcais/Jellyfish.git"
+    depends_on "autoconf" => :build
+    depends_on "automake" => :build
+    depends_on "libtool" => :build
+    depends_on "yaggo" => :build
+  end
 
   def install
+    system "autoreconf", "-i" if build.head?
     system "./configure", "--prefix=#{prefix}"
     system "make"
-    system "make install"
+    system "make", "install"
+  end
+
+  test do
+    system "#{bin}/jellyfish", "--version"
   end
 end

@@ -1,21 +1,20 @@
-require "formula"
-
 class Vtk5 < Formula
   homepage "http://www.vtk.org"
-  url "http://www.vtk.org/files/release/5.10/vtk-5.10.1.tar.gz"  # update libdir below, too!
-  sha1 "deb834f46b3f7fc3e122ddff45e2354d69d2adc3"
+  url "http://www.vtk.org/files/release/5.10/vtk-5.10.1.tar.gz" # update libdir below, too!
+  sha256 "f1a240c1f5f0d84e27b57e962f8e4a78b166b25bf4003ae16def9874947ebdbb"
   head "git://vtk.org/VTK.git", :branch => "release-5.10"
-  revision 1
+  revision 2
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    sha1 "ddebd8c0d9dc9315f36762b4179d7c4264460b0f" => :yosemite
-    sha1 "365ec2a27a039bc01a7b9ffcb3ff08a2d65d169f" => :mavericks
-    sha1 "78c4a464bf75f62b4b162a015562646aa9f572be" => :mountain_lion
+    sha256 "6163db8061b417758f171492118dfc9f56e88db8bb6d0da9422a02ac10fac1c1" => :el_capitan
+    sha256 "ae0df1d384aa6fb145fe264d19eb3021e5880a697652dd70c0d4bf405a1c04ae" => :yosemite
+    sha256 "443c65770a671b09ca7d31ea22ab5907c857d467c054f08d0e6ea0a7a9db9f17" => :mavericks
   end
 
   deprecated_option "examples" => "with-examples"
   deprecated_option "qt-extern" => "with-qt-extern"
+  deprecated_option "qt" => "with-qt"
+  deprecated_option "python" => "with-python"
   deprecated_option "tcl" => "with-tcl"
   deprecated_option "remove-legacy" => "without-legacy"
 
@@ -30,7 +29,7 @@ class Vtk5 < Formula
   depends_on "qt" => :optional
   depends_on :python => :recommended
   # If --with-qt and --with-python, then we automatically use PyQt, too!
-  if build.with? "qt" and build.with? "python"
+  if build.with?("qt") && build.with?("python")
     depends_on "sip"
     depends_on "pyqt"
   end
@@ -51,7 +50,7 @@ class Vtk5 < Formula
     patch do
       # apply upstream patches for C++11 mode
       url "https://gist.github.com/sxprophet/7463815/raw/165337ae10d5665bc18f0bad645eff098f939893/vtk5-cxx11-patch.diff"
-      sha1 "5511c8a48327824443f321894e3ea3ac289bf40e"
+      sha256 "b5946abb41c3d6ede33df636fa1621bbb86c4092cdae7032e3fdc63a5478f03d"
     end
   end
 
@@ -84,7 +83,7 @@ class Vtk5 < Formula
 
     args << "-DBUILD_EXAMPLES=" + ((build.with? "examples") ? "ON" : "OFF")
 
-    if build.with? "qt" or build.with? "qt-extern"
+    if build.with?("qt") || build.with?("qt-extern")
       args << "-DVTK_USE_GUISUPPORT=ON"
       args << "-DVTK_USE_QT=ON"
       args << "-DVTK_USE_QVTK=ON"
@@ -122,7 +121,6 @@ class Vtk5 < Formula
       end
     end
 
-
     args << "-DVTK_USE_BOOST=ON" if build.with? "boost"
     args << "-DVTK_USE_SYSTEM_HDF5=ON" if build.with? "hdf5"
     args << "-DVTK_USE_SYSTEM_JPEG=ON" if build.with? "jpeg"
@@ -132,22 +130,20 @@ class Vtk5 < Formula
 
     ENV.cxx11 if build.cxx11?
 
-    system 'sed -i "s|png_set_gray_1_2_4_to_8|png_set_expand_gray_1_2_4_to_8|g" IO/vtkPNGReader.cxx' if build.with? "libpng"
-
     mkdir "build" do
       if build.with? "python"
         args << "-DVTK_WRAP_PYTHON=ON"
-        # CMake picks up the system's python lib, even if we have a brewed one.
+        # CMake picks up the system's python dylib, even if we have a brewed one.
         if OS.mac?
-          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+          args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.dylib'"
         else
-          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.so'"
+          args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.so'"
         end
         # Set the prefix for the python bindings to the Cellar
         args << "-DVTK_PYTHON_SETUP_ARGS:STRING='--prefix=#{prefix} --single-version-externally-managed --record=installed.txt'"
         if build.with? "pyqt"
           args << "-DVTK_WRAP_PYTHON_SIP=ON"
-          args << "-DSIP_PYQT_DIR="#{HOMEBREW_PREFIX}/share/sip""
+          args << "-DSIP_PYQT_DIR=" # {HOMEBREW_PREFIX}/share/sip""
         end
       end
       args << ".."
@@ -179,9 +175,8 @@ class Vtk5 < Formula
 
       EOS
     end
-    return s.empty? ? nil : s
+    s.empty? ? nil : s
   end
-
 end
 
 __END__

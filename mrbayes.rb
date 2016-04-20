@@ -1,13 +1,19 @@
-require "formula"
-
 class Mrbayes < Formula
   homepage "http://mrbayes.sourceforge.net/"
-  #tag "bioinformatics"
-  #doi "10.1093/bioinformatics/btg180"
-  url "https://downloads.sourceforge.net/project/mrbayes/mrbayes/3.2.3/mrbayes-3.2.3.tar.gz"
-  sha1 "8492ce3b33369b10e89553f56a9a94724772ae2d"
+  # tag "bioinformatics"
+  # doi "10.1093/bioinformatics/btg180"
+
+  url "https://downloads.sourceforge.net/project/mrbayes/mrbayes/3.2.5/mrbayes-3.2.5.tar.gz"
+  sha256 "31309af428fb52208af4663ddad38b6ff120fe8e7cedd75cf50818f59eb49000"
 
   head "https://mrbayes.svn.sourceforge.net/svnroot/mrbayes/trunk/"
+
+  bottle do
+    cellar :any
+    sha256 "72e4f76b89c9ba2af17053982eb70ceb4be5abc08b51fc064cba29afb62eb295" => :yosemite
+    sha256 "93d5d55f6eed5e6bbeb9a1a012b33ec6901b55fb5f5187d44b4ba66070494446" => :mavericks
+    sha256 "8056f58206496186e970b1f91508fd6741dc6f8087f6ad9db50a285f333c326a" => :mountain_lion
+  end
 
   option "with-beagle", "Build with BEAGLE library support"
 
@@ -34,7 +40,7 @@ class Mrbayes < Formula
     end
 
     # Doc and examples are not included in the svn
-    (share/"mrbayes").install ["documentation", "examples"] unless build.head?
+    pkgshare.install ["documentation", "examples"] unless build.head?
   end
 
   def caveats
@@ -47,6 +53,6 @@ class Mrbayes < Formula
   end
 
   test do
-    system "echo 'version' | #{bin}/mb"
+    pipe_output(bin/"mb", "Execute #{pkgshare}/examples/finch.nex")
   end
 end

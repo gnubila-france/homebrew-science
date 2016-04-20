@@ -1,25 +1,33 @@
-require 'formula'
-
 class CeleraAssembler < Formula
-  homepage 'http://wgs-assembler.sourceforge.net/'
-  url 'https://downloads.sourceforge.net/project/wgs-assembler/wgs-assembler/wgs-8.1/wgs-8.1.tar.bz2'
-  sha1 '76f38c869b4876b414794b59e90d4f36c3e13488'
+  homepage "http://wgs-assembler.sourceforge.net/"
+  # doi "myers2000whole" => "10.1126/science.287.5461.2196",
+  #   "levy2007diploid" => "10.1371/journal.pbio.0050254",
+  #   "miller2008aggressive" => "10.1093/bioinformatics/btn548"
+  # tag "bioinformatics"
 
-  # Doesn't build, because the 'kmer' directory is missing.
-  #head 'https://svn.code.sf.net/p/wgs-assembler/svn/trunk'
+  url "https://downloads.sourceforge.net/project/wgs-assembler/wgs-assembler/wgs-8.3/wgs-8.3rc1.tar.bz2"
+  sha256 "2e000d04273df2cc3ce2514beb812d5772b7127d469d088bb9293e522ae32096"
 
-  fails_with :clang do
-    build 503
-    cause "error: use of undeclared identifier 'use_safe_malloc_instead'"
+  bottle do
+    sha256 "4e9e12f42fcc8dcc8929bd10317c4eca171c01c03692142ebec7f7520a91d12d" => :yosemite
+    sha256 "e3afa1a3b48f5e2711f5b11920ed0e5b6ce913971b410a24c368150720a8e4c8" => :mavericks
+    sha256 "7645009d791cae8322451e8796d756442b71a37de851f13fcc41f5b239ab3e8c" => :mountain_lion
   end
 
+  # Fails with clang: https://sourceforge.net/p/wgs-assembler/bugs/262/
+  needs :openmp
+
   def install
-    ENV.j1
-    system *%w[make -C kmer install]
-    system *%w[make -C src]
-    arch = Pathname.new(Dir['*/bin'][0]).dirname
+    ENV.deparallelize
+
+    # Search Homebrew library paths before system paths.
+    inreplace "src/c_make.as", " /usr/lib64 ", " "
+
+    system "make", "-C", "kmer", "install", "CC=#{ENV.cc}"
+    system "make", "-C", "src", "CC=#{ENV.cc}", "LDLIBS=-rdynamic"
+    arch = Pathname.new(Dir["*/bin"][0]).dirname
     libexec.install arch
-    bin.install_symlink libexec / arch / 'bin/runCA'
+    bin.install_symlink libexec/arch/"bin/runCA"
   end
 
   test do

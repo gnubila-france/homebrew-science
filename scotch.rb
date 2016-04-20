@@ -1,33 +1,54 @@
-require 'formula'
-
 class Scotch < Formula
-  homepage 'https://gforge.inria.fr/projects/scotch'
-  url 'https://gforge.inria.fr/frs/download.php/31831/scotch_6.0.0.tar.gz'
-  sha1 'eb32d846bb14449245b08c81e740231f7883fea6'
+  desc "Software package for graph and mesh/hypergraph partitioning, graph clustering, and sparse matrix ordering"
+  homepage "https://gforge.inria.fr/projects/scotch"
+  url "https://gforge.inria.fr/frs/download.php/file/34618/scotch_6.0.4.tar.gz"
+  sha256 "f53f4d71a8345ba15e2dd4e102a35fd83915abf50ea73e1bf6efe1bc2b4220c7"
+  revision 1
 
-  option 'without-check', 'skip build-time tests (not recommended)'
+  bottle do
+    cellar :any
+    revision 1
+    sha256 "cf4496e8f83b59f659ac6cca13d1d86d6a5cb0bfd6c0c649355421bd27067311" => :el_capitan
+    sha256 "d003dd5e30c0945013e134842cd1cd8d16bbf234d161ccba6867ad95324c93cf" => :yosemite
+    sha256 "90da8b03e290fae7c21f2907678aecf6339eb873f0f37a2086fa658cf1b45c4b" => :mavericks
+  end
+
+  option "without-check", "skip build-time tests (not recommended)"
 
   depends_on :mpi => :cc
-
-  patch :DATA # See http://goo.gl/NY4MOy
+  depends_on "xz" => :optional # Provides lzma compression.
 
   def install
     cd "src" do
-      ln_s "Make.inc/Makefile.inc.i686_mac_darwin8", "Makefile.inc"
+      ln_s "Make.inc/Makefile.inc.i686_mac_darwin10", "Makefile.inc"
+      # default CFLAGS: -O3 -Drestrict=__restrict -DCOMMON_FILE_COMPRESS_GZ -DCOMMON_PTHREAD -DCOMMON_PTHREAD_BARRIER -DCOMMON_RANDOM_FIXED_SEED -DCOMMON_TIMING_OLD -DSCOTCH_PTHREAD -DSCOTCH_RENAME
+      # MPI implementation is not threadsafe, do not use DSCOTCH_PTHREAD
 
-      make_args = ["CCS=#{ENV['CC']}",
-                   "CCP=#{ENV['MPICC']}",
-                   "CCD=#{ENV['MPICC']}",
-                   "LIB=.dylib",
-                   "AR=libtool",
-                   "ARFLAGS=-dynamic -install_name #{lib}/$(notdir $@) -undefined dynamic_lookup -o ",
-                   "RANLIB=echo"]
+      cflags   = %w[-O3 -fPIC -Drestrict=__restrict -DCOMMON_PTHREAD_BARRIER
+                    -DCOMMON_PTHREAD
+                    -DSCOTCH_CHECK_AUTO -DCOMMON_RANDOM_FIXED_SEED
+                    -DCOMMON_TIMING_OLD -DSCOTCH_RENAME
+                    -DCOMMON_FILE_COMPRESS_BZ2 -DCOMMON_FILE_COMPRESS_GZ]
+      ldflags  = %w[-lm -lz -lpthread -lbz2]
 
-      inreplace "Makefile.inc" do |s|
-        # OS X doesn't implement pthread_barriers required by Scotch
-        s.slice! "-DCOMMON_PTHREAD"
-        s.slice! "-DSCOTCH_PTHREAD"
-        s.gsub! "-O3", "-O3 -fPIC"
+      cflags  += %w[-DCOMMON_FILE_COMPRESS_LZMA]   if build.with? "xz"
+      ldflags += %W[-L#{Formula["xz"].lib} -llzma] if build.with? "xz"
+
+      make_args = ["CCS=#{ENV["CC"]}",
+                   "CCP=#{ENV["MPICC"]}",
+                   "CCD=#{ENV["MPICC"]}",
+                   "RANLIB=echo",
+                   "CFLAGS=#{cflags.join(" ")}",
+                   "LDFLAGS=#{ldflags.join(" ")}"]
+
+      if OS.mac?
+        make_args << "LIB=.dylib"
+        make_args << "AR=libtool"
+        make_args << "ARFLAGS=-dynamic -install_name #{lib}/$(notdir $@) -undefined dynamic_lookup -o "
+      else
+        make_args << "LIB=.so"
+        make_args << "ARCH=ar"
+        make_args << "ARCHFLAGS=-ruv"
       end
 
       system "make", "scotch", "VERBOSE=ON", *make_args
@@ -35,152 +56,17 @@ class Scotch < Formula
       system "make", "install", "prefix=#{prefix}", *make_args
       system "make", "check", "ptcheck", "EXECP=mpirun -np 2", *make_args if build.with? "check"
     end
+
+    # Install documentation + sample graphs and grids.
+    doc.install Dir["doc/*"]
+    (share / "scotch").install "grf", "tgt"
+  end
+
+  test do
+    mktemp do
+      system "echo cmplt 7 | #{bin}/gmap #{share}/scotch/grf/bump.grf.gz - bump.map"
+      system "#{bin}/gmk_m2 32 32 | #{bin}/gmap - #{share}/scotch/tgt/h8.tgt brol.map"
+      system "#{bin}/gout -Mn -Oi #{share}/scotch/grf/4elt.grf.gz #{share}/scotch/grf/4elt.xyz.gz - graph.iv"
+    end
   end
 end
-
-__END__
-diff --git a/src/check/Makefile b/src/check/Makefile
-index 2b3283a..73ee4ba 100644
---- a/src/check/Makefile
-+++ b/src/check/Makefile
-@@ -110,7 +110,7 @@ check_common_thread		:	test_common_thread
- 					$(EXECS) ./test_common_thread
- 
- test_common_thread		:	test_common_thread.c		\
--					$(SCOTCHLIBDIR)/libscotch.a
-+					$(SCOTCHLIBDIR)/libscotch$(LIB)
- 
- ##
- 
-@@ -118,7 +118,7 @@ check_graph_color		:	test_scotch_graph_color
- 					$(EXECS) ./test_scotch_graph_color data/bump.grf
- 
- test_graph_color		:	test_scotch_graph_color.c	\
--					$(SCOTCHLIBDIR)/libscotch.a
-+					$(SCOTCHLIBDIR)/libscotch$(LIB)
- 
- ##
- 
-@@ -126,7 +126,7 @@ check_strat_seq			:	test_strat_seq
- 					$(EXECS) ./test_strat_seq
- 
- test_strat_seq			:	test_strat_seq.c		\
--					$(SCOTCHLIBDIR)/libscotch.a
-+					$(SCOTCHLIBDIR)/libscotch$(LIB)
- 
- ##
- 
-@@ -134,7 +134,7 @@ check_strat_par			:	test_strat_par
- 					$(EXECS) ./test_strat_par
- 
- test_strat_par			:	test_strat_par.c		\
--					$(SCOTCHLIBDIR)/libptscotch.a
-+					$(SCOTCHLIBDIR)/libptscotch$(LIB)
- 
- ##
- 
-@@ -142,7 +142,7 @@ check_scotch_dgraph_band	:	test_scotch_dgraph_band
- 					$(EXECP) ./test_scotch_dgraph_band data/bump.grf
- 
- test_scotch_dgraph_band		:	test_scotch_dgraph_band.c	\
--					$(SCOTCHLIBDIR)/libptscotch.a
-+					$(SCOTCHLIBDIR)/libptscotch$(LIB)
- 
- ##
- 
-@@ -150,4 +150,4 @@ check_scotch_dgraph_grow	:	test_scotch_dgraph_grow
- 					$(EXECP) ./test_scotch_dgraph_grow data/bump.grf
- 
- test_scotch_dgraph_grow		:	test_scotch_dgraph_grow.c	\
--					$(SCOTCHLIBDIR)/libptscotch.a
-+					$(SCOTCHLIBDIR)/libptscotch$(LIB)
-diff --git a/src/check/test_scotch_dgraph_band.c b/src/check/test_scotch_dgraph_band.c
-index 9dbd966..2edece6 100644
---- a/src/check/test_scotch_dgraph_band.c
-+++ b/src/check/test_scotch_dgraph_band.c
-@@ -99,10 +99,12 @@ char *              argv[])
-     errorPrint ("main: Cannot initialize (1)");
-     exit       (1);
-   }
-+#ifdef SCOTCH_PTHREAD
-   if (thrdlvlreqval > thrdlvlproval) {
-     errorPrint ("main: Cannot initialize (2)");
-     exit       (1);
-   }
-+#endif
- 
-   if (argc != 2) {
-     errorPrint ("main: invalid number of parameters");
-@@ -115,12 +117,14 @@ char *              argv[])
- 
-   fprintf (stderr, "Proc %2d of %2d, pid %d\n", proclocnum, procglbnbr, getpid ());
- 
-+#ifdef SCOTCH_DEBUG_CHECK2
-   if (proclocnum == 0) {                          /* Synchronize on keybord input */
-     char           c;
- 
-     printf ("Waiting for key press...\n");
-     scanf ("%c", &c);
-   }
-+#endif
- 
-   if (MPI_Barrier (proccomm) != MPI_SUCCESS) {    /* Synchronize for debug */
-     errorPrint ("main: cannot communicate");
-diff --git a/src/check/test_scotch_dgraph_grow.c b/src/check/test_scotch_dgraph_grow.c
-index e074f83..56a5ebb 100644
---- a/src/check/test_scotch_dgraph_grow.c
-+++ b/src/check/test_scotch_dgraph_grow.c
-@@ -103,10 +103,12 @@ char *              argv[])
-     errorPrint ("main: Cannot initialize (1)");
-     exit       (1);
-   }
-+#ifdef SCOTCH_PTHREAD
-   if (thrdlvlreqval > thrdlvlproval) {
-     errorPrint ("main: Cannot initialize (2)");
-     exit       (1);
-   }
-+#endif
- 
-   if (argc != 2) {
-     errorPrint ("main: invalid number of parameters");
-@@ -119,12 +121,14 @@ char *              argv[])
- 
-   fprintf (stderr, "Proc %2d of %2d, pid %d\n", proclocnum, procglbnbr, getpid ());
- 
-+#ifdef SCOTCH_DEBUG_CHECK2
-   if (proclocnum == 0) {                          /* Synchronize on keybord input */
-     char           c;
- 
-     printf ("Waiting for key press...\n");
-     scanf ("%c", &c);
-   }
-+#endif
- 
-   if (MPI_Barrier (proccomm) != MPI_SUCCESS) {    /* Synchronize for debug */
-     errorPrint ("main: cannot communicate");
-diff --git a/src/check/test_scotch_dgraph_redist.c b/src/check/test_scotch_dgraph_redist.c
-index 3c1d2e0..84f17e3 100644
---- a/src/check/test_scotch_dgraph_redist.c
-+++ b/src/check/test_scotch_dgraph_redist.c
-@@ -98,10 +98,12 @@ char *              argv[])
-     errorPrint ("main: Cannot initialize (1)");
-     exit       (1);
-   }
-+#ifdef SCOTCH_PTHREAD
-   if (thrdlvlreqval > thrdlvlproval) {
-     errorPrint ("main: Cannot initialize (2)");
-     exit       (1);
-   }
-+#endif
- 
-   if (argc != 2) {
-     errorPrint ("main: invalid number of parameters");
-@@ -114,7 +116,6 @@ char *              argv[])
- 
-   fprintf (stderr, "Proc %2d of %2d, pid %d\n", proclocnum, procglbnbr, getpid ());
- 
--#define SCOTCH_DEBUG_CHECK2
- #ifdef SCOTCH_DEBUG_CHECK2
-   if (proclocnum == 0) {                          /* Synchronize on keybord input */
-     char           c;
-

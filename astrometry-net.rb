@@ -1,9 +1,8 @@
-require "formula"
-
 class AstrometryNet < Formula
+  desc "Automatic identification of astronomical images"
   homepage "http://astrometry.net"
-  url "http://astrometry.net/downloads/astrometry.net-0.50.tar.gz"
-  sha1 "fcf6332b603e1af8f25ce7d6996b5a4b0eeaa687"
+  url "http://astrometry.net/downloads/astrometry.net-0.64.tar.gz"
+  sha256 "4b9b8e9d7133a7bcc1f85298cf5762699dce70548be0cb91165286fc6677136d"
 
   head "https://github.com/dstndstn/astrometry.net.git"
 
@@ -37,8 +36,7 @@ class AstrometryNet < Formula
     system "make"
     system "make extra" if build.with? "extras"
     system "make py"    if build.with? "python"
-    system "make install"
-
+    system "make", "install"
   end
 
   test do

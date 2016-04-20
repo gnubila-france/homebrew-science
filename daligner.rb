@@ -1,23 +1,28 @@
-require "formula"
-
 class Daligner < Formula
+  desc "DALIGNER: Find all significant local alignments between reads"
   homepage "https://github.com/thegenemyers/DALIGNER"
+  # doi "10.1007/978-3-662-44753-6_5"
+  # tag "bioinformatics"
+
+  url "https://github.com/thegenemyers/DALIGNER/archive/V1.0.tar.gz"
+  sha256 "2fb03616f0d60df767fbba7c8f0021ec940c8d822ab2011cf58bd56a8b9fb414"
+
   head "https://github.com/thegenemyers/DALIGNER.git"
 
-  version "2014-07-10"
-  url "https://github.com/thegenemyers/DALIGNER/archive/52dc8b0.tar.gz"
-  sha1 "a8a43c43c09730990e804a212804b35ef899bd57"
+  bottle do
+    cellar :any
+    sha256 "5be3c4c9da4b1e05921ced5fe07882012835dc83acf8dfc31f102985c17344f5" => :yosemite
+    sha256 "3483a17210caff7a027dcf2fdb0b5610514a41285c4fe32cc2411f101856758b" => :mavericks
+    sha256 "2599b9b12ddb85dded8c32f04b452bc1cd68313ae23527644cb9de25b4c6ecb9" => :mountain_lion
+  end
 
   def install
-    # Fix clang: error: cannot specify -o when generating multiple output files
-    inreplace "Makefile", " DB.h", ""
-
     system "make"
-    bin.install %w[daligner HPCdaligner
-      LAsort LAmerge LAshow LAsplit LAcat LAcheck]
+    bin.install %w[daligner HPCdaligner HPCmapper LAcat LAcheck LAmerge LAshow LAsort LAsplit]
+    doc.install "README"
   end
 
   test do
-    system "#{bin}/daligner 2>&1 |grep daligner"
+    assert_match "Usage", shell_output("#{bin}/daligner 2>&1", 1)
   end
 end

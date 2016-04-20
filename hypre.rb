@@ -1,22 +1,21 @@
-require "formula"
-
 class Hypre < Formula
+  desc "A library of high performance preconditioners that features parallel multigrid methods for both structured and unstructured grid problems"
   homepage "http://computation.llnl.gov/casc/hypre/software.html"
-  url "http://computation.llnl.gov/casc/hypre/download/hypre-2.9.0b.tar.gz"
-  sha1 "aaf8354437be38aa2fbcc944ab64d464a5b39207"
-  revision 1
+  url "http://ftp.mcs.anl.gov/pub/petsc/externalpackages/hypre-2.10.0b-p2.tar.gz"
+  mirror "ftp://ftp.mirrorservice.org/sites/distfiles.gentoo.org/distfiles/hypre-2.10.0b-p2.tar.gz"
+  sha256 "76414e693e5381e352e759c851c8cd5969dba7001b1dc153fe0f1ff60a5bb168"
+  version "2.10.0b-p2"
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    cellar :any
-    sha1 "add4e934ef8e5b0f0153f2f3c36c51772500b9e3" => :yosemite
-    sha1 "9084cd44b5b6a52bd54d9e44d470ef348bde27ba" => :mavericks
-    sha1 "04a20a9c0b4d781e574516489fab5125e9134d6a" => :mountain_lion
+    cellar :any_skip_relocation
+    sha256 "8200e4c7300e5fc57d6ccc814d20ec6447bca6fb083b16aba796a65dacb5d0dd" => :el_capitan
+    sha256 "a3d851b0a08273eab33bc1be75e9a5150c165c6ee772e7906050fa03922a4ffc" => :yosemite
+    sha256 "dce11f3704a2bc6271476eb82947da24fc2dfa82ffadb21af5fa788f61c4312a" => :mavericks
   end
 
   depends_on :fortran => :recommended
-  depends_on :mpi => [:cc, :cxx, :f90, :f77, :optional]
-  depends_on 'openblas' => :optional
+  depends_on :mpi => [:cc, :cxx, :f90, :f77, :recommended]
+  depends_on "openblas" => :optional
 
   option "without-check", "Skip build-time tests (not recommended)"
   option "with-superlu", "Use internal SuperLU routines"
@@ -58,30 +57,31 @@ class Hypre < Formula
                         "--with-lapack-lib-dirs=/usr/lib"]
       end
 
-      # lib/Makefile treats the hypre internal BLAS & LAPACK implementations
-      # as dependencies for libHYPRE.a (the hypre library). If building with
-      # an external BLAS library, strip out these dependencies.
-      if (build.with? "openblas" or build.with? "accelerate")
-        inreplace "lib/Makefile", /.*BLASFILES.*/, ""
-        inreplace "lib/Makefile", /.*LAPACKFILES.*/, ""
-      end
-
-      config_args << "--disable-fortran" if build.without? "fortran"
+      config_args << "--disable-fortran" if build.without? :fortran
       config_args << "--without-superlu" if build.without? "superlu"
       config_args << "--without-fei" if build.without? "fei"
       config_args << "--without-mli" if build.without? "mli"
 
-      # Add MPI include directory and library directory
-      # Hardcoded for open-mpi, as in the mumps formula
-      # TODO: make more general, admit use of mpich2
-      if build.with? "mpi"
+      # on Linux Homebrew formulae will fail to build
+      # shared libraries without the dependent static libraries
+      # compiled with -fPIC
+      ENV.prepend "CFLAGS", "-fPIC"
+      ENV.prepend "CXXFLAGS", "-fPIC"
+      ENV.prepend "FFLAGS", "-fPIC"
+
+      if build.with? :mpi
+        ENV["CC"] = ENV["MPICC"]
+        ENV["CXX"] = ENV["MPICXX"]
+        ENV["F77"] = ENV["MPIF77"]
+        ENV["FC"] = ENV["MPIFC"]
         config_args += ["--with-MPI",
-                        "--with-MPI-include=#{Formula["open-mpi"].opt_include}",
-                        "--with-MPI-lib-dirs=#{Formula["open-mpi"].opt_lib}",
-        # MPI library strings for linking depends on compilers
-        # enabled.  Only the C library strings are needed (without the
-        # lib), because hypre is a C library.
-                        '--with-MPI-lib="mpi"']
+                        "--with-MPI-include=#{HOMEBREW_PREFIX}/include",
+                        "--with-MPI-lib-dirs=#{HOMEBREW_PREFIX}/lib",
+                        # MPI library strings for linking depends on compilers
+                        # enabled.  Only the C library strings are needed (without the
+                        # lib), because hypre is a C library.
+                        "--with-MPI-libs=mpi",
+                       ]
       else
         config_args << "--without-MPI"
       end
@@ -100,7 +100,7 @@ class Hypre < Formula
         system "make", "test"
         system "./test/ij"
         system "./test/struct"
-        system "./test/sstruct -in test/sstruct.in.default -solver 40 -rhsone"
+        system "./test/sstruct", "-in", "test/sstruct.in.default", "-solver", "40", "-rhsone"
 
         cd "examples" do
           # The examples makefile does not use any of the variables from the
@@ -131,48 +131,50 @@ class Hypre < Formula
           # - Babel examples (use "make babel", not implemented)
           # - FEI example (use "make ex10", requires Babel, not implemented)
           if build.without? "bigint"
-            system "make", "all"
 
-          # Example run commands taken from source file comments in headers
-            system "mpiexec -np 2 ./ex1"
-            system "mpiexec -np 2 ./ex2"
-            system "mpiexec -np 16 ./ex3 -n 33 -solver -v 1 1"
-            system "mpiexec -np 16 ./ex4 -n 33 -solver 10 -K 3 -B 0 -C 1 -U0 2 -F 4"
-            system "mpiexec -np 4 ./ex5"
-            system "mpiexec -np 2 ./ex6"
-            system "mpiexec -np 16 ./ex7 -n 33 -solver 10 -K 3 -B 0 -C 1 -U0 2 -F 4"
-            system "mpiexec -np 2 ./ex8"
-            system "mpiexec -np 16 ./ex9 -n 33 -solver 0 -v 1 1"
-            system "mpiexec -np 4 ./ex11"
-            system "mpiexec -np 2 ./ex12 -pfmg"
-            system "mpiexec -np 2 ./ex12 -boomeramg"
-            system "mpiexec -np 6 ./ex13 -n 10"
-            system "mpiexec -np 6 ./ex14 -n 10"
-            system "mpiexec -np 8 ./ex15 -n 10"
+            # For some reason, this Makefile doesn't include the settings of
+            # the main Makefile.
+            local_args = ["CC=#{ENV["MPICC"]}", "F77=#{ENV["MPIF77"]}", "CXX=#{ENV["MPICXX"]}", "F90=#{ENV["MPIFC"]}"]
+            system "make", "all", *local_args
 
-            if build.with? "fortran"
+            # Example run commands taken from source file comments in headers
+            system "mpiexec", "-np", "2", "./ex1"
+            system "mpiexec", "-np", "2", "./ex2"
+            system "mpiexec", "-np", "16", "./ex3", "-n", "33", "-solver", "-v", "1", "1"
+            system "mpiexec", "-np", "16", "./ex4", "-n", "33", "-solver", "10", "-K", "3", "-B", "0", "-C", "1", "-U0", "2", "-F", "4"
+            system "mpiexec", "-np", "4", "./ex5"
+            system "mpiexec", "-np", "2", "./ex6"
+            system "mpiexec", "-np", "16", "./ex7", "-n", "33", "-solver", "10", "-K", "3", "-B", "0", "-C", "1", "-U0", "2", "-F", "4"
+            system "mpiexec", "-np", "2", "./ex8"
+            system "mpiexec", "-np", "16", "./ex9", "-n", "33", "-solver", "0", "-v", "1", "1"
+            system "mpiexec", "-np", "4", "./ex11"
+            system "mpiexec", "-np", "2", "./ex12", "-pfmg"
+            system "mpiexec", "-np", "2", "./ex12", "-boomeramg"
+            system "mpiexec", "-np", "6", "./ex13", "-n", "10"
+            system "mpiexec", "-np", "6", "./ex14", "-n", "10"
+            system "mpiexec", "-np", "8", "./ex15", "-n", "10"
+
+            if build.with? :fortran
               system "make", "fortran"
 
-              system "mpiexec -np 4 ./ex5f"
-              system "mpiexec -np 2 ./ex12f"
+              system "mpiexec", "-np", "4", "./ex5f"
+              system "mpiexec", "-np", "2", "./ex12f"
             end
           else
             system "make", "64bit"
 
-            system "mpiexec -np 4 ./ex5big"
-            system "mpiexec -np 8 ./ex15big -n 10"
+            system "mpiexec", "-np", "4", "./ex5big"
+            system "mpiexec", "-np", "8", "./ex15big", "-n", "10"
           end
-
-        end if build.with? "mpi"
+        end if build.with? :mpi
       end
-
     end
   end
 
   def caveats; <<-EOS.undent
       Please register for hypre at:
 
-      http://computation.llnl.gov/casc/hypre/download/hypre-2.9.0b_reg.html
+      http://computation.llnl.gov/casc/hypre/download/hypre-2.10.0b_reg.html
     EOS
   end
 end

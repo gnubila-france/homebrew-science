@@ -1,19 +1,25 @@
-require 'formula'
-
 class Bamutil < Formula
-  homepage 'http://genome.sph.umich.edu/wiki/BamUtil'
-  url 'http://genome.sph.umich.edu/w/images/7/77/BamUtilLibStatGen.1.0.11.tar.gz'
-  sha1 'aada189439704d3881378566e16cb2cc789f43a1'
+  desc "Collection of tools to work with SAM/BAM files."
+  homepage "http://genome.sph.umich.edu/wiki/BamUtil"
+  # tag "bioinformatics"
+  url "http://genome.sph.umich.edu/w/images/7/70/BamUtilLibStatGen.1.0.13.tgz"
+  sha256 "16c1d01c37d1f98b98c144f3dd0fda6068c1902f06bd0989f36ce425eb0c592b"
+  head "https://github.com/statgen/bamUtil.git"
 
-  head 'https://github.com/statgen/bamUtil.git'
+  bottle do
+    cellar :any_skip_relocation
+    sha256 "fe2cef19aab52f2edf598ce2fae36d72b8d4c506e3ca3740a30c085c1f801618" => :yosemite
+    sha256 "3446b278dabe53013db787888815423b9b52afb11f92243b12299f4ee0dfe39f" => :mavericks
+    sha256 "2ac9a6a23b1af9afe1c03eab6630a92cfabd0c3127155c8c3bc7865cde8c3eb4" => :mountain_lion
+  end
 
   def install
     ENV.j1
-    system 'make', 'cloneLib' if build.head?
-    system 'make', 'install', "INSTALLDIR=#{bin}"
+    system "make", "cloneLib" if build.head?
+    system "make", "install", "INSTALLDIR=#{bin}"
   end
 
   test do
-    system 'bam 2>&1 |grep -q BAM'
+    system "bam 2>&1 |grep -q BAM"
   end
 end

@@ -1,12 +1,16 @@
-require "formula"
-
 class Quake < Formula
   homepage "http://www.cbcb.umd.edu/software/quake/"
-  #doi "10.1186/gb-2010-11-11-r116"
-  #tag "bioinformatics"
+  # doi "10.1186/gb-2010-11-11-r116"
+  # tag "bioinformatics"
 
   url "http://www.cbcb.umd.edu/software/quake/downloads/quake-0.3.5.tar.gz"
-  sha1 "5ee22ae15415b97ef88e55f0dc786d07ed7aff7b"
+  sha256 "8ded707213117463675553bb989c4c69c5d01b122945b1e265c79d7e4e34eebd"
+
+  bottle do
+    cellar :any
+    sha256 "e2f419b64306ff4bdd0fca1bb861f7b80751f2c619e6a6a252e6d1885b068d99" => :yosemite
+    sha256 "9b9f35ad47303fc9714d55987d9bcd45f1f49df852e8120a5e101229cdcc30b8" => :mavericks
+  end
 
   needs :openmp
 
@@ -31,6 +35,6 @@ class Quake < Formula
   end
 
   test do
-    system "#{bin}/quake.py --help"
+    system "#{bin}/quake.py", "--help"
   end
 end

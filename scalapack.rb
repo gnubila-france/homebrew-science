@@ -1,40 +1,44 @@
-require 'formula'
-
 class Scalapack < Formula
-  homepage 'http://www.netlib.org/scalapack/'
-  url 'http://www.netlib.org/scalapack/scalapack-2.0.2.tgz'
-  sha1 'ff9532120c2cffa79aef5e4c2f38777c6a1f3e6a'
-  head 'https://icl.cs.utk.edu/svn/scalapack-dev/scalapack/trunk', :using => :svn
-  revision 1
+  desc "library of high-performance linear algebra routines for parallel distributed memory machines"
+  homepage "http://www.netlib.org/scalapack/"
+  url "http://www.netlib.org/scalapack/scalapack-2.0.2.tgz"
+  sha256 "0c74aeae690fe5ee4db7926f49c5d0bb69ce09eea75beb915e00bba07530395c"
+  head "https://icl.cs.utk.edu/svn/scalapack-dev/scalapack/trunk", :using => :svn
+  revision 4
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    sha1 "f93023fc4796abf28a9f4a9c79551569dbdf31e2" => :yosemite
-    sha1 "94fdfa3445c1fc301f8649478aea02576d194865" => :mavericks
-    sha1 "82ab5e50ba36891716c8c9fe2605082fcdc3dc78" => :mountain_lion
+    cellar :any
+    sha256 "642ac7c4537ed2b422413fc9319a7e03318663360c16289b993ae4cb6ccbc837" => :el_capitan
+    sha256 "4b902d2f32acc9f02b5c2cb781b00f538d2038a2d3891ac4c9789e55147f3bb0" => :yosemite
+    sha256 "8fb0b1f4136c13af897d35c2e1d810a57581a12f6e77863033c1ec21e342ccf0" => :mavericks
   end
 
-  option 'with-shared-libs', 'Build shared libs (some tests may fail)'
-  option 'without-check', 'Skip build-time tests (not recommended)'
+  option "without-check", "Skip build-time tests (not recommended)"
 
   depends_on :mpi => [:cc, :f90]
-  depends_on 'cmake' => :build
-  depends_on 'openblas' => :optional
-  depends_on 'veclibfort' if build.without? 'openblas'
+  depends_on "cmake" => :build
+  depends_on "openblas" => :optional
+  depends_on "veclibfort" if build.without?("openblas") && OS.mac?
   depends_on :fortran
 
   def install
     args = std_cmake_args
-    args << "-DBUILD_SHARED_LIBS=ON" if build.with? "shared-libs"
-    blas = (build.with? "openblas") ? "openblas" : "vecLibFort"
-    blas = "-L#{Formula["#{blas}"].opt_lib} -l#{blas}"
-    args += ["-DBLAS_LIBRARIES=#{blas}", "-DLAPACK_LIBRARIES=#{blas}"]
+    args << "-DBUILD_SHARED_LIBS=ON"
+
+    if build.with? "openblas"
+      blas = "-L#{Formula["openblas"].opt_lib} -lopenblas"
+      lapack = blas
+    else
+      blas = (OS.mac?) ? "-L#{Formula["veclibfort"].opt_lib} -lvecLibFort" : "-lblas"
+      lapack = (OS.mac?) ? blas : "-llapack"
+    end
+    args += ["-DBLAS_LIBRARIES=#{blas}", "-DLAPACK_LIBRARIES=#{lapack}"]
 
     mkdir "build" do
-      system 'cmake', '..', *args
-      system 'make all'
-      system 'make test' if build.with? 'check'
-      system 'make install'
+      system "cmake", "..", *args
+      system "make", "all"
+      system "make", "install"
+      system "make", "test" if build.with? "check"
     end
   end
 end

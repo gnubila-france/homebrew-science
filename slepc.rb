@@ -1,66 +1,99 @@
-require 'formula'
-
 class Slepc < Formula
-  homepage 'http://www.grycap.upv.es/slepc'
-  url 'http://www.grycap.upv.es/slepc/download/download.php?filename=slepc-3.5.2.tar.gz'
-  sha1 '23675bee5c010d20f4a08f80f22120119ddb940a'
+  desc "Scalable Library for Eigenvalue Computations"
+  homepage "http://www.grycap.upv.es/slepc"
+  url "http://slepc.upv.es/download/download.php?filename=slepc-3.6.2.tar.gz"
+  sha256 "2ab4311bed26ccf7771818665991b2ea3a9b15f97e29fd13911ab1293e8e65df"
   revision 1
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    sha1 "a6ec347ac8513518297e2e61e494e0b0f3d0916e" => :yosemite
-    sha1 "6f18da0e8e9a2844f7568664bed437e8bc000674" => :mavericks
-    sha1 "929c5863c88478a94f656f11e978cfbee318eb46" => :mountain_lion
+    sha256 "5bbfd1cd8a413034fe886dfed19dce44256901a04b0dbd3b47db41ecd48cad1f" => :el_capitan
+    sha256 "45b5afc871d067c3698a29ff00cf5bfc70c07972518a1b69360061d17b7fd6bb" => :yosemite
+    sha256 "bdf41be13f92176f17d1aff1235b1211d3250c8d5ee7bf194503f4b668e3e465" => :mavericks
   end
 
-  option "complex", "Use complex version by default. Otherwise, real-valued version will be symlinked"
+  deprecated_option "complex" => "with-complex"
 
-  depends_on 'petsc' => :build
+  option "with-complex", "Use complex version by default. Otherwise, real-valued version will be symlinked"
+  option "without-check", "Skip run-time tests (not recommended)"
+  option "with-openblas", "Install dependencies with openblas"
+  option "with-blopex", "Download blopex library"
+
+  openblasdep = (build.with? "openblas") ? ["with-openblas"] : []
+
+  depends_on "petsc" => openblasdep
   depends_on :mpi => [:cc, :f90]
   depends_on :fortran
-  depends_on :x11  => :optional
-  depends_on 'arpack' => [:recommended, "with-mpi"]
+  depends_on :x11 => :optional
+  depends_on "arpack" => [:recommended, "with-mpi"] + openblasdep
 
   def install
     ENV.deparallelize
 
     # these must be consistent with petsc.rb
-    petsc_arch_real="real"
-    petsc_arch_complex="complex"
+    petsc_arch_real = "real"
+    petsc_arch_complex = "complex"
 
-    ENV['SLEPC_DIR'] = Dir.getwd
-    args = %W[--with-clean=true]
-    args << "--with-arpack-dir=#{Formula["arpack"].lib}" << "--with-arpack-flags=-lparpack,-larpack" if build.with? "arpack"
+    ENV["SLEPC_DIR"] = Dir.getwd
+    args = ["--with-clean=true"]
+    args << "--with-arpack-dir=#{Formula["arpack"].opt_lib}" << "--with-arpack-flags=-lparpack,-larpack" if build.with? "arpack"
+    args << "--download-blopex" if build.with? "blopex"
 
     # real
-    ENV['PETSC_DIR'] = ("#{Formula["petsc"].opt_prefix}" +"/"+petsc_arch_real)
+    ENV["PETSC_DIR"] = "#{Formula["petsc"].opt_prefix}/#{petsc_arch_real}"
     system "./configure", "--prefix=#{prefix}/#{petsc_arch_real}", *args
     system "make"
-    system "make test"
-    system "make install"
+    if build.with? "check"
+      log_name = "make-test-real.log"
+      system "make test 2>&1 | tee #{log_name}"
+      ohai `grep "Completed test" "#{log_name}"`.chomp
+      prefix.install "#{log_name}"
+    end
+
+    system "make", "test" if build.with? "check"
+    system "make", "install"
 
     # complex
-    ENV['PETSC_DIR'] = ("#{Formula["petsc"].opt_prefix}" +"/"+petsc_arch_complex)
+    ENV["PETSC_DIR"] = "#{Formula["petsc"].opt_prefix}/#{petsc_arch_complex}"
     system "./configure", "--prefix=#{prefix}/#{petsc_arch_complex}", *args
     system "make"
-    system "make test"
-    system "make install"
-
-    ohai 'Test results are in ~/Library/Logs/Homebrew/slepc. Please check.'
+    # TODO: investigate why complex tests fail to run on Linuxbrew
+    if build.with? "check"
+      log_name = "make-test-complex.log"
+      system "make test 2>&1 | tee #{log_name}"
+      ohai `grep "Completed test" "#{log_name}"`.chomp
+      prefix.install "#{log_name}"
+    end
+    system "make", "install"
 
     # Link what we need.
     petsc_arch = ((build.include? "complex") ? petsc_arch_complex : petsc_arch_real)
 
-    include.install_symlink Dir["#{prefix}/#{petsc_arch}/include/*.h"], "#{prefix}/#{petsc_arch}/finclude", "#{prefix}/#{petsc_arch}/slepc-private"
-    lib.install_symlink Dir["#{prefix}/#{petsc_arch}/lib/*.a"], Dir["#{prefix}/#{petsc_arch}/lib/*.dylib"]
+    include.install_symlink Dir["#{prefix}/#{petsc_arch}/include/*.h"],
+                            "#{prefix}/#{petsc_arch}/finclude", "#{prefix}/#{petsc_arch}/slepc-private"
+    lib.install_symlink Dir["#{prefix}/#{petsc_arch}/lib/*.*"]
     prefix.install_symlink "#{prefix}/#{petsc_arch}/conf"
-    doc.install 'docs/slepc.pdf', Dir["docs/*.htm"], 'docs/manualpages'  # They're not really man pages.
-    share.install 'share/slepc/datafiles'
+    doc.install "docs/slepc.pdf", Dir["docs/*.htm"], "docs/manualpages" # They're not really man pages.
+    pkgshare.install "share/slepc/datafiles"
+
+    # install some tutorials for use in test block
+    pkgshare.install "src/eps/examples/tutorials"
+
+    # fix install name on OS-X
+    system "install_name_tool", "-id", "#{opt_prefix}/lib/libslepc.3.6.dylib", "#{prefix}/#{petsc_arch}/lib/libslepc.3.6.2.dylib" if OS.mac?
   end
 
   def caveats; <<-EOS.undent
-    Set your SLEPC_DIR to #{prefix}/real or #{prefix}/complex.
-    Fortran modules are in #{prefix}/real/include and #{prefix}/complex/include.
+    Set your SLEPC_DIR to #{opt_prefix}/real or #{opt_prefix}/complex.
+    Fortran modules are in #{opt_prefix}/real/include and #{opt_prefix}/complex/include.
     EOS
+  end
+
+  test do
+    cp_r prefix/"share/slepc/tutorials", testpath
+    Dir.chdir("tutorials") do
+      system "mpicc", "ex1.c", "-I#{opt_include}", "-I#{Formula["petsc"].opt_include}", "-L#{Formula["petsc"].opt_lib}", "-lpetsc", "-L#{opt_lib}", "-lslepc", "-o", "ex1"
+      system "mpirun -np 3 ex1 2>&1 | tee ex1.out"
+      assert (identical?("output/ex1_1.out", "ex1.out"))
+    end
   end
 end

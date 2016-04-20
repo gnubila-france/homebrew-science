@@ -1,13 +1,19 @@
-require 'formula'
-
 class Sundials < Formula
-  homepage 'https://computation.llnl.gov/casc/sundials/main.html'
-  url 'http://ftp.mcs.anl.gov/pub/petsc/externalpackages/sundials-2.5.0.tar.gz'
-  sha1 '9affcc525269e80c8ec6ae1db1e0a0ff201d07e0'
+  homepage "https://computation.llnl.gov/casc/sundials/main.html"
+  url "http://ftp.mcs.anl.gov/pub/petsc/externalpackages/sundials-2.5.0.tar.gz"
+  sha256 "9935760931fa6539edd0741acbcf4986770426fd5ea40e50ad4ebed0fc77b0d3"
+  revision 1
+
+  bottle do
+    cellar :any
+    sha256 "0a75173a16eb741b9c6135dcefd04bdab112ffb763cc030dc9ff1e53875677c7" => :el_capitan
+    sha256 "c05273d13e0c3c4dc0d3f7466f3e993117eb0f2731658d61c3b5bb1241f8d8dd" => :yosemite
+    sha256 "fd7ebbd54d691c66360ac1c92d8c07f496ba4f38ffe2380e4033b39498db4a37" => :mavericks
+  end
 
   depends_on "openblas" => :optional
   depends_on :fortran => :optional
-  depends_on :mpi => [:cc, :f77, :optional]
+  depends_on :mpi => [:cc, :f77, :recommended]
 
   option "without-check", "Skip build-time checks and examples (not recommended)"
 
@@ -50,12 +56,11 @@ class Sundials < Formula
                     "--with-lapack=openblas"] if build.with? "openblas"
     config_args << ((build.with? "fortran") ? "--enable-fcmix" : "--disable-fcmix")
 
-    # Add MPI root install directory
-    # Hardcoded for openmpi, as in the mumps and hypre formulas
-    # TODO: Make more general, admit use of mpich2
     if build.with? "mpi"
+      ENV["CC"] = ENV["MPICC"]
+      ENV["F77"] = ENV["MPIF77"]
       config_args += ["--enable-mpi",
-                      "--with-mpi-root=#{Formula["open-mpi"].opt_prefix}"]
+                      "--with-mpi-root=#{HOMEBREW_PREFIX}"]
     else
       config_args << "--disable-mpi"
     end
@@ -66,36 +71,36 @@ class Sundials < Formula
       cd "examples" do
         # Non-sensitivity examples can be looped over:
         # Serial CVODE examples
-        %w(cvAdvDiff_bnd cvDirectDemo_ls
-         cvDiurnal_kry cvDiurnal_kry_bp
-         cvKrylovDemo_ls cvKrylovDemo_prec
-         cvRoberts_dns cvRoberts_dns_uw).each do |file|
+        %w[cvAdvDiff_bnd cvDirectDemo_ls
+           cvDiurnal_kry cvDiurnal_kry_bp
+           cvKrylovDemo_ls cvKrylovDemo_prec
+           cvRoberts_dns cvRoberts_dns_uw].each do |file|
           system "./cvode/serial/#{file}"
         end
 
         # Serial IDA examples
-        %w(idaFoodWeb_bnd idaHeat2D_bnd
-         idaHeat2D_kry idaKrylovDemo_ls
-         idaRoberts_dns idaSlCrank_dns).each do |file|
+        %w[idaFoodWeb_bnd idaHeat2D_bnd
+           idaHeat2D_kry idaKrylovDemo_ls
+           idaRoberts_dns idaSlCrank_dns].each do |file|
           system "./ida/serial/#{file}"
         end
 
         # Serial KINSOL examples
-        %w(kinFerTron_dns kinFoodWeb_kry
-         kinKrylovDemo_ls kinLaplace_bnd
-         kinRoboKin_dns).each do |file|
+        %w[kinFerTron_dns kinFoodWeb_kry
+           kinKrylovDemo_ls kinLaplace_bnd
+           kinRoboKin_dns].each do |file|
           system "./kinsol/serial/#{file}"
         end
 
         # Serial CVODES examples without command-line args
         # Note: some are CVODES versions of CVODE examples
-        %w(cvsAdvDiff_ASAi_bnd cvsAdvDiff_bnd
-         cvsDirectDemo_ls cvsDiurnal_kry
-         cvsDiurnal_kry_bp cvsFoodWeb_ASAi_kry
-         cvsFoodWeb_ASAp_kry cvsHessian_ASA_FSA
-         cvsKrylovDemo_ls cvsKrylovDemo_prec
-         cvsRoberts_ASAi_dns cvsRoberts_dns
-         cvsRoberts_dns_uw).each do |file|
+        %w[cvsAdvDiff_ASAi_bnd cvsAdvDiff_bnd
+           cvsDirectDemo_ls cvsDiurnal_kry
+           cvsDiurnal_kry_bp cvsFoodWeb_ASAi_kry
+           cvsFoodWeb_ASAp_kry cvsHessian_ASA_FSA
+           cvsKrylovDemo_ls cvsKrylovDemo_prec
+           cvsRoberts_ASAi_dns cvsRoberts_dns
+           cvsRoberts_dns_uw].each do |file|
           system "./cvodes/serial/#{file}"
         end
 
@@ -108,12 +113,12 @@ class Sundials < Formula
         # Serial IDAS examples without command-line args
         # Note: some are IDAS versions of IDA examples
         # idasRoberts_ASAi_dns segfaults?!?
-        %w(idasAkzoNob_ASAi_dns idasAkzoNob_dns
-         idasFoodWeb_bnd idasHeat2D_bnd
-         idasHeat2D_kry idasHessian_ASA_FSA
-         idasKrylovDemo_ls idasRoberts_ASAi_dns
-         idasRoberts_dns idasSlCrank_dns
-         idasSlCrank_FSA_dns).each do |file|
+        %w[idasAkzoNob_ASAi_dns idasAkzoNob_dns
+           idasFoodWeb_bnd idasHeat2D_bnd
+           idasHeat2D_kry idasHessian_ASA_FSA
+           idasKrylovDemo_ls idasRoberts_ASAi_dns
+           idasRoberts_dns idasSlCrank_dns
+           idasSlCrank_FSA_dns].each do |file|
           system "./idas/serial/#{file}"
         end
 
@@ -123,9 +128,9 @@ class Sundials < Formula
         if build.with? "fortran"
 
           # Serial FCVODE examples
-          %w(fcvAdvDiff_bnd fcvDiurnal_kry
+          %w[fcvAdvDiff_bnd fcvDiurnal_kry
              fcvDiurnal_kry_bp fcvRoberts_dns
-             fcvRoberts_dnsL).each do |file|
+             fcvRoberts_dnsL].each do |file|
             system "./cvode/fcmix_serial/#{file}"
           end
 
@@ -142,64 +147,68 @@ class Sundials < Formula
         if build.with? "mpi"
 
           # Parallel CVODE examples; number of processors specified in source
-          system "mpiexec -np 4 ./cvode/parallel/cvAdvDiff_non_p"
-          system "mpiexec -np 4 ./cvode/parallel/cvDiurnal_kry_bbd_p"
-          system "mpiexec -np 4 ./cvode/parallel/cvDiurnal_kry_p"
+          system "mpiexec", "-np", "4", "./cvode/parallel/cvAdvDiff_non_p"
+          system "mpiexec", "-np", "4", "./cvode/parallel/cvDiurnal_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./cvode/parallel/cvDiurnal_kry_p"
 
           # Parallel IDA examples; # processors specified in source
-          system "mpiexec -np 4 ./ida/parallel/idaFoodWeb_kry_bbd_p"
-          system "mpiexec -np 4 ./ida/parallel/idaFoodWeb_kry_p"
-          system "mpiexec -np 4 ./ida/parallel/idaHeat2D_kry_bbd_p"
-          system "mpiexec -np 4 ./ida/parallel/idaHeat2D_kry_p"
+          system "mpiexec", "-np", "4", "./ida/parallel/idaFoodWeb_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./ida/parallel/idaFoodWeb_kry_p"
+          system "mpiexec", "-np", "4", "./ida/parallel/idaHeat2D_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./ida/parallel/idaHeat2D_kry_p"
 
           # Parallel KINSOL examples; # processors specified in source
-          system "mpiexec -np 4 ./kinsol/parallel/kinFoodWeb_kry_bbd_p"
-          system "mpiexec -np 4 ./kinsol/parallel/kinFoodWeb_kry_p"
+          system "mpiexec", "-np", "4", "./kinsol/parallel/kinFoodWeb_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./kinsol/parallel/kinFoodWeb_kry_p"
 
           # Parallel CVODES examples
-          system "mpiexec -np 4 ./cvodes/parallel/cvsAdvDiff_ASAp_non_p"
-          system "mpiexec -np 4 ./cvodes/parallel/cvsAdvDiff_non_p"
-          system "mpiexec -np 4 ./cvodes/parallel/cvsAtmDisp_ASAi_kry_bbd_p"
-          system "mpiexec -np 4 ./cvodes/parallel/cvsDiurnal_kry_bbd_p"
-          system "mpiexec -np 4 ./cvodes/parallel/cvsDiurnal_kry_p"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsAdvDiff_ASAp_non_p"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsAdvDiff_non_p"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsAtmDisp_ASAi_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsDiurnal_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsDiurnal_kry_p"
 
-          system "mpiexec -np 4 ./cvodes/parallel/cvsAdvDiff_FSA_non_p -sensi stg t"
-          system "mpiexec -np 4 ./cvodes/parallel/cvsDiurnal_FSA_kry_p -sensi stg t"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsAdvDiff_FSA_non_p", "-sensi", "stg", "t"
+          system "mpiexec", "-np", "4", "./cvodes/parallel/cvsDiurnal_FSA_kry_p", "-sensi", "stg", "t"
 
           # Parallel IDAS examples
-          system "mpiexec -np 4 ./idas/parallel/idasBruss_ASAp_kry_bbd_p"
-          system "mpiexec -np 4 ./idas/parallel/idasBruss_FSA_kry_bbd_p"
-          system "mpiexec -np 4 ./idas/parallel/idasBruss_kry_bbd_p"
-          system "mpiexec -np 4 ./idas/parallel/idasFoodWeb_kry_bbd_p"
-          system "mpiexec -np 4 ./idas/parallel/idasFoodWeb_kry_p"
-          system "mpiexec -np 4 ./idas/parallel/idasHeat2D_kry_bbd_p"
-          system "mpiexec -np 4 ./idas/parallel/idasHeat2D_kry_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasBruss_ASAp_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasBruss_FSA_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasBruss_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasFoodWeb_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasFoodWeb_kry_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasHeat2D_kry_bbd_p"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasHeat2D_kry_p"
 
-          system "mpiexec -np 4 ./idas/parallel/idasHeat2D_FSA_kry_bbd_p -sensi stg t"
+          system "mpiexec", "-np", "4", "./idas/parallel/idasHeat2D_FSA_kry_bbd_p", "-sensi", "stg", "t"
 
           if build.with? "fortran"
 
             # Parallel FCVODE examples
-            system "mpiexec -np 4 ./cvode/fcmix_parallel/fcvDiag_kry_bbd_p"
-            system "mpiexec -np 4 ./cvode/fcmix_parallel/fcvDiag_kry_p"
-            system "mpiexec -np 4 ./cvode/fcmix_parallel/fcvDiag_non_p"
+            system "mpiexec", "-np", "4", "./cvode/fcmix_parallel/fcvDiag_kry_bbd_p"
+            system "mpiexec", "-np", "4", "./cvode/fcmix_parallel/fcvDiag_kry_p"
+            system "mpiexec", "-np", "4", "./cvode/fcmix_parallel/fcvDiag_non_p"
 
             # Parallel FIDA examples
-            system "mpiexec -np 4 ./ida/fcmix_parallel/fidaHeat2D_kry_bbd_p"
+            system "mpiexec", "-np", "4", "./ida/fcmix_parallel/fidaHeat2D_kry_bbd_p"
 
             # Parallel FKINSOL examples
             # TODO: Fix bug in parallel FKINSOL example or ask upstream for fix
-            system "mpiexec -np 4 ./kinsol/fcmix_parallel/fkinDiagon_kry_p"
+            system "mpiexec", "-np", "4", "./kinsol/fcmix_parallel/fkinDiagon_kry_p"
 
           end
-
         end
-
       end
     end
 
-    system "make install"
+    system "make", "install"
+  end
 
+  def caveats; <<-EOS.undent
+    Some failures were observed on Yosemite when using MPICH2.
+    The failures did not occur with OpenMPI. For more information, see
+    https://github.com/Homebrew/homebrew-science/issues/1814.
+    EOS
   end
 end
 

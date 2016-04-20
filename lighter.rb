@@ -1,20 +1,19 @@
-require "formula"
-
 class Lighter < Formula
+  desc "Fast and memory-efficient sequencing error corrector"
   homepage "https://github.com/mourisl/Lighter"
-  url "https://github.com/mourisl/Lighter/archive/v1.0.3.tar.gz"
-  head "https://github.com/mourisl/Lighter.git"
-  sha1 "60451effb3b4185f5d2f0a2862dfb9b56e8ffe2c"
-  bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    cellar :any
-    sha1 "8c05a07b8c9011d0177079bd7f4d8fd497ddd97f" => :yosemite
-    sha1 "e56e3c77862210dafbe0327e01559b5340250cf2" => :mavericks
-    sha1 "a2514b84f19e238e77905f574cbbcadc5c6c7e99" => :mountain_lion
-  end
+  # tag 'bioinformatics'
+  # doi '10.1186/s13059-014-0509-9'
 
-  #tag 'bioinformatics'
-  #doi '10.1186/s13059-014-0509-9'
+  url "https://github.com/mourisl/Lighter/archive/v1.0.7.tar.gz"
+  sha256 "fde9969f49fa618d12713473b15c79884f91da6017710329e3c9f890f464465f"
+  head "https://github.com/mourisl/Lighter.git"
+
+  bottle do
+    cellar :any
+    sha256 "0cfd10552918cbea28e5e3bf2a8c9d87b220da3eda6c0c7cbcf9764f7494b49c" => :yosemite
+    sha256 "65dc90163a1ad643d49d88f2769cfa65c176b19d5485081819cb2b8c52130996" => :mavericks
+    sha256 "72a4d55edc5b4504d6c72201b5fcf5388c49f2ff3d97ae9c2d9f5e301af252f5" => :mountain_lion
+  end
 
   def install
     system "make"
@@ -23,6 +22,6 @@ class Lighter < Formula
   end
 
   test do
-    system "#{bin}/lighter -h"
+    system "#{bin}/lighter", "-h"
   end
 end

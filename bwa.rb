@@ -1,23 +1,32 @@
-require 'formula'
-
 class Bwa < Formula
-  homepage 'http://bio-bwa.sourceforge.net/'
-  #doi '10.1093/bioinformatics/btp324'
-  url 'https://downloads.sf.net/project/bio-bwa/bwa-0.7.10.tar.bz2'
-  sha1 '4a8b692d5835993fdb8dce350570951076daac4f'
+  desc "Burrow-Wheeler Aligner for pairwise alignment of DNA"
+  homepage "https://github.com/lh3/bwa"
+  # doi "10.1093/bioinformatics/btp324"
+  # tag "bioinformatics"
 
-  head 'https://github.com/lh3/bwa.git'
+  url "https://github.com/lh3/bwa/releases/download/v0.7.13/bwa-0.7.13.tar.bz2"
+  sha256 "559b3c63266e5d5351f7665268263dbb9592f3c1c4569e7a4a75a15f17f0aedc"
+
+  head "https://github.com/lh3/bwa.git"
+
+  bottle do
+    cellar :any_skip_relocation
+    sha256 "4d285efa2136c1345ff08dc8b2dbc83e8703fe8f3ee7b163d2b10744012ab9cf" => :el_capitan
+    sha256 "97358a24e7bdc93005ecff8a54145553592ddded04f354ed2451b1d82e59122f" => :yosemite
+    sha256 "ce2ae47bdf1d5995bb6365e4caed2a8b98b5ffa816b7aeff232ed58b86a25fc8" => :mavericks
+  end
 
   def install
     system "make", "CC=#{ENV.cc}", "CFLAGS=#{ENV.cflags}"
     bin.install "bwa"
-    doc.install %w[README.md NEWS.md]
+    doc.install "README.md", "NEWS.md"
     man1.install "bwa.1"
   end
 
   test do
-    (testpath/"test.fasta").write ">0\nMEEPQSDPSV\n"
-    system "#{bin}/bwa index test.fasta"
+    (testpath/"test.fasta").write ">0\nAGATGTGCTG\n"
+    system "#{bin}/bwa", "index", "test.fasta"
     assert File.exist?("test.fasta.bwt")
+    assert_match "AGATGTGCTG", shell_output("#{bin}/bwa mem test.fasta test.fasta")
   end
 end

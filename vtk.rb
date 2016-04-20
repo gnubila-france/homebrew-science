@@ -1,20 +1,17 @@
-require "formula"
-
 class Vtk < Formula
   homepage "http://www.vtk.org"
-  url "http://www.vtk.org/files/release/6.1/VTK-6.1.0.tar.gz"
-  mirror "http://fossies.org/linux/misc/VTK-6.1.0.tar.gz"
-  sha1 "91d1303558c7276f031f8ffeb47b4233f2fd2cd9"
-  revision 1
-
-  bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    sha1 "745eb8b7c7eeb14b7226d7f075560625a8fd940d" => :yosemite
-    sha1 "3f38f458c793b8fcb3c8b08e1f6174ec74e05a15" => :mavericks
-    sha1 "795331c1241eaee7b41aec442e9d55cffb7ce84c" => :mountain_lion
-  end
+  url "http://www.vtk.org/files/release/7.0/VTK-7.0.0.tar.gz"
+  mirror "https://fossies.org/linux/misc/VTK-7.0.0.tar.gz"
+  sha256 "78a990a15ead79cdc752e86b83cfab7dbf5b7ef51ba409db02570dbdd9ec32c3"
 
   head "https://github.com/Kitware/VTK.git"
+
+  bottle do
+    revision 1
+    sha256 "f5370ca4b94383438348f44a51a1756ad6f3b9f8dae7da395c476d05956befbf" => :el_capitan
+    sha256 "30b6b50bbf8babb49da1e924aeaaa598a4381b55e46db3aa27ac2bf2ecf2e7e2" => :yosemite
+    sha256 "81d1c035f77a95ecf6e3062a03907d5ebbedcfe3e55d6513088f306204a907d0" => :mavericks
+  end
 
   deprecated_option "examples" => "with-examples"
   deprecated_option "qt-extern" => "with-qt-extern"
@@ -27,53 +24,55 @@ class Vtk < Formula
   option "with-tcl",        "Enable Tcl wrapping of VTK classes"
   option "with-matplotlib", "Enable matplotlib support"
   option "without-legacy",  "Disable legacy APIs"
+  option "without-python",  "Build without python2 support"
 
   depends_on "cmake" => :build
   depends_on :x11 => :optional
   depends_on "qt" => :optional
   depends_on "qt5" => :optional
-  depends_on :python => :recommended
+
+  depends_on :python => :recommended if MacOS.version <= :snow_leopard
+  depends_on :python3 => :optional
+
   depends_on "boost" => :recommended
   depends_on "fontconfig" => :recommended
   depends_on "hdf5" => :recommended
   depends_on "jpeg" => :recommended
   depends_on "libpng" => :recommended
   depends_on "libtiff" => :recommended
-  depends_on "matplotlib" => :python if build.with? "matplotlib"
-  depends_on "libxml2" => :recommended
+  depends_on "matplotlib" => :python if build.with?("matplotlib") && build.with?("python")
 
   # If --with-qt and --with-python, then we automatically use PyQt, too!
-  if build.with? "qt" or build.with? "qt5"
-    if build.with? "python"
+  if build.with? "python"
+    if build.with? "qt"
       depends_on "sip"
       depends_on "pyqt"
+    elsif build.with? "qt5"
+      depends_on "sip"
+      depends_on "pyqt5" => ["with-python", "without-python3"]
+    end
+  end
+
+  if build.with? "python3"
+    if build.with? "qt"
+      depends_on "sip" => ["with-python3", "without-python"]
+      depends_on "pyqt" => ["with-python3", "without-python" ]
+    elsif build.with? "qt5"
+      depends_on "sip"   => ["with-python3", "without-python"]
+      depends_on "pyqt5"
     end
   end
 
   def install
     args = std_cmake_args + %W[
       -DVTK_REQUIRED_OBJCXX_FLAGS=''
-      -DVTK_USE_CARBON=OFF
-      -DVTK_USE_TK=OFF
-      -DBUILD_TESTING=OFF
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_RPATH:STRING=#{lib}
       -DCMAKE_INSTALL_NAME_DIR:STRING=#{lib}
       -DVTK_USE_SYSTEM_EXPAT=ON
+      -DVTK_USE_SYSTEM_LIBXML2=ON
       -DVTK_USE_SYSTEM_ZLIB=ON
     ]
-
-if build.with? "libxml2"
-      args << "-DVTK_USE_SYSTEM_LIBXML2=OFF"
-      args << "-DLIBXML2_LIBRARIES='#{Formula["libxml2"].lib}/libxml2.so'"
-      args << "-DLIBXML2_INCLUDE_DIR='#{Formula["libxml2"].include}/libxml2'"
-    else
-      args << "-DVTK_USE_SYSTEM_LIBXML2=ON"
-    end
-
-    if OS.mac?
-      args << "-DIOKit:FILEPATH=#{MacOS.sdk_path}/System/Library/Frameworks/IOKit.framework"
-    end
 
     args << "-DBUILD_EXAMPLES=" + ((build.with? "examples") ? "ON" : "OFF")
 
@@ -83,7 +82,7 @@ if build.with? "libxml2"
       args << "-DBUILD_TESTING=OFF"
     end
 
-    if build.with? "qt" or build.with? "qt5" or build.with? "qt-extern"
+    if build.with?("qt") || build.with?("qt5") || build.with?("qt-extern")
       args << "-DVTK_QT_VERSION:STRING=5" if build.with? "qt5"
       args << "-DVTK_Group_Qt=ON"
     end
@@ -130,22 +129,39 @@ if build.with? "libxml2"
     ENV.cxx11 if build.cxx11?
 
     mkdir "build" do
-      if build.with? "python"
+      if build.with?("python") && build.without?("python3")
         args << "-DVTK_WRAP_PYTHON=ON"
-        # CMake picks up the system"s python lib, even if we have a brewed one.
+        # CMake picks up the system"s python dylib, even if we have a brewed one.
         if OS.mac?
-          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.dylib'"
+          args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.dylib'"
         else
-          args << "-DPYTHON_LIBRARY='#{%x(python-config --prefix).chomp}/lib/libpython2.7.so'"
+          args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.so'"
         end
         # Set the prefix for the python bindings to the Cellar
         args << "-DVTK_INSTALL_PYTHON_MODULE_DIR='#{lib}/python2.7/site-packages'"
-
-        if build.with? "qt"
-          args << "-DVTK_WRAP_PYTHON_SIP=ON"
-          args << "-DSIP_PYQT_DIR='#{Formula["pyqt"].opt_share}/sip'"
+      elsif build.without?("python") && build.with?("python3")
+        args << "-DVTK_WRAP_PYTHON=ON"
+        args << "-DPYTHON_EXECUTABLE=/usr/local/bin/python3"
+        args << "-DPYTHON_INCLUDE_DIR='#{`python3-config --prefix`.chomp}/include/python3.5m'"
+        # CMake picks up the system"s python dylib, even if we have a brewed one.
+        if OS.mac?
+          args << "-DPYTHON_LIBRARY='#{`python3-config --prefix`.chomp}/lib/libpython3.5.dylib'"
+        else
+          args << "-DPYTHON_LIBRARY='#{`python3-config --prefix`.chomp}/lib/libpython3.5.so'"
         end
+        # Set the prefix for the python bindings to the Cellar
+        args << "-DVTK_INSTALL_PYTHON_MODULE_DIR='#{lib}/python3.5/site-packages'"
+      elsif build.with?("python3") && build.with?("python")
+        # Does not currenly support building both python 2 and 3 versions
+         odie "VTK: Does not currently support building both python 2 and 3 wrappers"
       end
+
+      if build.with?("qt") || build.with?("qt5")
+        args << "-DVTK_WRAP_PYTHON_SIP=ON"
+        args << "-DSIP_PYQT_DIR='#{Formula["pyqt"].opt_share}/sip'" if build.with? "qt"
+        args << "-DSIP_PYQT_DIR='#{Formula["pyqt5"].opt_share}/sip'" if build.with? "qt5"
+      end
+
       args << ".."
       system "cmake", *args
       system "make"
@@ -172,7 +188,6 @@ if build.with? "libxml2"
 
       EOS
     end
-    return s.empty? ? nil : s
+    s.empty? ? nil : s
   end
-
 end

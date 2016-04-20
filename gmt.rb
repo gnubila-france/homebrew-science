@@ -1,16 +1,16 @@
-require "formula"
-
 class Gmt < Formula
+  desc "Collection of tools for processing and displaying xy and xyz datasets"
   homepage "http://gmt.soest.hawaii.edu/"
-  url "ftp://ftp.soest.hawaii.edu/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://ftp.star.nesdis.noaa.gov/pub/sod/lsa/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://ftp.iris.washington.edu/pub/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://ftp.iag.usp.br/pub/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://ftp.scc.u-tokai.ac.jp/pub/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://gmt.mirror.ac.za/pub/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://ftp.geologi.uio.no/pub/gmt/gmt-5.1.1-src.tar.bz2"
-  mirror "ftp://gd.tuwien.ac.at/pub/gmt/gmt-5.1.1-src.tar.bz2"
-  sha1 "ff64936dfdec8a57a89d29f505f27e435169d33f"
+  url "ftp://ftp.soest.hawaii.edu/gmt/gmt-5.2.1-src.tar.xz"
+  mirror "ftp://ftp.star.nesdis.noaa.gov/pub/sod/lsa/gmt/gmt-5.2.1-src.tar.xz"
+  mirror "ftp://gd.tuwien.ac.at/pub/gmt/gmt-5.2.1-src.tar.xz"
+  sha256 "01c199525bdfa78ad388959e739f34eca8effb8d82475c8786a066e04b5e19af"
+
+  bottle do
+    sha256 "3187beea5a7e66a8b6f406ffa987d7e6379cba36fba4c0d62ce62800aa46c155" => :el_capitan
+    sha256 "91f2ea626fc5a81cf979b8e9094fa51635fd709fd59e033435c39c5574050bd1" => :yosemite
+    sha256 "e3f739a7f590011af88cf6a1292c2687931faa9a2fd213dc6ac3cf5b6fd8f276" => :mavericks
+  end
 
   depends_on "cmake" => :build
   depends_on "gdal"
@@ -21,27 +21,17 @@ class Gmt < Formula
   conflicts_with "gmt4", :because => "both versions install the same binaries"
 
   resource "gshhg" do
-    url "ftp://ftp.soest.hawaii.edu/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://ftp.star.nesdis.noaa.gov/pub/sod/lsa/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://ftp.iris.washington.edu/pub/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://ftp.iag.usp.br/pub/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://ftp.scc.u-tokai.ac.jp/pub/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://gmt.mirror.ac.za/pub/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://ftp.geologi.uio.no/pub/gmt/gshhg-gmt-2.3.1.tar.gz"
-    mirror "ftp://gd.tuwien.ac.at/pub/gmt/gshhg-gmt-2.3.1.tar.gz"
-    sha1 "fe9e4e1c415faf09d51666e65c5b9d4b492c8a15"
+    url "ftp://ftp.soest.hawaii.edu/gmt/gshhg-gmt-2.3.4.tar.gz"
+    mirror "ftp://ftp.star.nesdis.noaa.gov/pub/sod/lsa/gmt/gshhg-gmt-2.3.4.tar.gz"
+    mirror "ftp://gd.tuwien.ac.at/pub/gmt/gshhg-gmt-2.3.4.tar.gz"
+    sha256 "420c6c0df9170015ac0f7c7d472c5a58f8b70a7bf89f162c59dcd70735389110"
   end
 
   resource "dcw" do
-    url "ftp://ftp.soest.hawaii.edu/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://ftp.star.nesdis.noaa.gov/pub/sod/lsa/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://ftp.iris.washington.edu/pub/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://ftp.iag.usp.br/pub/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://ftp.scc.u-tokai.ac.jp/pub/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://gmt.mirror.ac.za/pub/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://ftp.geologi.uio.no/pub/gmt/dcw-gmt-1.1.1.tar.gz"
-    mirror "ftp://gd.tuwien.ac.at/pub/gmt/dcw-gmt-1.1.1.tar.gz"
-    sha1 "deca85f21426604c8574a18d16c931a1fd9ae27b"
+    url "ftp://ftp.soest.hawaii.edu/gmt/dcw-gmt-1.1.2.tar.gz"
+    mirror "ftp://ftp.star.nesdis.noaa.gov/pub/sod/lsa/gmt/dcw-gmt-1.1.2.tar.gz"
+    mirror "ftp://gd.tuwien.ac.at/pub/gmt/dcw-gmt-1.1.2.tar.gz"
+    sha256 "f719054f8d657e7b10b5182d4c15bc7f38ef7483ed05cdaa9f94ab1a0008bfb6"
   end
 
   def install

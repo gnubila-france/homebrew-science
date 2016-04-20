@@ -1,20 +1,29 @@
-require "formula"
-
 class Corset < Formula
   homepage "https://code.google.com/p/corset-project/"
-  #doi "10.1186/s13059-014-0410-6"
+  # doi "10.1186/s13059-014-0410-6"
+  # tag "bioinformatics"
 
-  url "https://docs.google.com/uc?export=download&id=0B1FwZagazjpcV0luTDZteHNPWXc"
-  version "1.02"
-  sha1 "ec75b183ff5e23394507477999f42d3f35311f59"
+  url "https://googledrive.com/host/0B1FwZagazjpcc0JLZWllcFlwUXc/corset-1.04.tar.gz"
+  sha256 "8dff57be7aab5943e78706cd0c5106e6b776c596d3a7a6a0a8565f6fe1752cfe"
+
+  bottle do
+    cellar :any
+    sha256 "977bc8dd872fedd86bc869f09d1d7262db98a424a239678e54f0744d058dfe0b" => :yosemite
+    sha256 "70ee1716feec3c4510959d64c3a57f7a1b66c520cebeaa9b1af3c6ee91d94ae2" => :mavericks
+    sha256 "0d9c81f718dc245992994db69d1584cac1f75827ee1c48b96fb06b79660e58e5" => :mountain_lion
+  end
 
   depends_on "samtools"
+  depends_on "htslib"
 
   def install
+    ENV.libcxx if MacOS.version < :mavericks
+
     system "./configure",
       "--prefix=#{prefix}",
       "--with-bam_inc=#{Formula["samtools"].opt_include}/bam",
-      "--with-bam_lib=#{Formula["samtools"].opt_lib}"
+      "--with-bam_lib=#{Formula["samtools"].opt_lib}",
+      "--with-htslib=#{Formula["htslib"].opt_lib}"
 
     system "make"
 

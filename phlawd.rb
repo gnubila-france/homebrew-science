@@ -1,15 +1,23 @@
-require "formula"
-
 class Phlawd < Formula
+  desc "Phylogenetic dataset construction"
   homepage "http://www.phlawd.net/"
-  #doi "10.1186/1471-2148-9-37"
+  # doi "10.1186/1471-2148-9-37"
 
-  # the most up to date version of phlawd is the chinchliff fork, which contains a variety of bug fixes and new features.
-  # this fork and the (original) blackrim fork will eventually be merged.
+  # The most up to date version of phlawd is the chinchliff fork, which contains
+  # a variety of bug fixes and new features. This fork and the (original)
+  # blackrim fork will eventually be merged.
+  url "https://github.com/chinchliff/phlawd/releases/download/3.4a/phlawd_3.4a_src_with_sqlitewrapped_1.3.1.tar.gz"
   version "3.4a"
-  url "https://github.com/chinchliff/phlawd/releases/download/#{version}/phlawd_#{version}_src_with_sqlitewrapped_1.3.1.tar.gz"
-  sha1 "116158ee33b6c33e83a585b26481c5497c7b4ac7"
+  sha256 "0ec8e45359af6e932ea4a042fe4f42ddf05b04689a25df937b2d85db41038253"
+  revision 1
   head "https://github.com/chinchliff/phlawd.git"
+
+  bottle do
+    cellar :any
+    sha256 "596b39c60e34f0fb0903608069c6bc7a7e95f293263fbcbd159d21f625263e85" => :el_capitan
+    sha256 "93e832b4a937ed89898c2b7e9a58d61a8c1100a9b08bb8657ccdf46b14b467a4" => :yosemite
+    sha256 "a555afc38f33773723596db6a833300aece36d1a26baa4ffbc65e6321dfc6366" => :mavericks
+  end
 
   fails_with :clang do
     build 600
@@ -26,25 +34,25 @@ class Phlawd < Formula
   # correct the makefile to look for dependencies where brew installs them
   patch :DATA
 
+  needs :openmp
+
   depends_on "mafft"
   depends_on "muscle"
   depends_on "quicktree"
   depends_on "sqlite"
 
   def install
-
-    # compile sqlitewrapped: a dependency included here since it uncommon and unmaintained
-    system *%w[make -C sqlitewrapped-1.3.1]
+    # compile sqlitewrapped: a dependency included here since it's uncommon and unmaintained
+    system "make", "-C", "sqlitewrapped-1.3.1"
 
     # compile and install phlawd
-    system *%w[make -C src -f Makefile.MAC]
-    prefix.install "src/PHLAWD"
-    bin.install_symlink "../PHLAWD"
+    system "make", "-C", "src", "-f", "Makefile.MAC"
+    bin.install "src/PHLAWD"
   end
 
   test do
-    # currently developing tests, they will be included in next release
-    system "#{bin}/PHLAWD"
+    # currently developing better tests for the next release
+    assert_match version.to_s, shell_output("#{bin}/PHLAWD")
   end
 end
 

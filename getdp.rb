@@ -1,34 +1,39 @@
-require "formula"
-
-class GmshSvnStrategy < SubversionDownloadStrategy
-  def quiet_safe_system *args
+class GetdpSvnStrategy < SubversionDownloadStrategy
+  def quiet_safe_system(*args)
     super *args + ["--username", "getdp", "--password", "getdp"]
   end
 end
 
 class Getdp < Formula
+  desc "Open source finite element solver using mixed elements."
   homepage "http://www.geuz.org/getdp/"
-  url "http://www.geuz.org/getdp/src/getdp-2.4.4-source.tgz"
-  sha1 "e4c3a2a0d9281acdab2c6ba2c3c6ecd53fea4d0c"
+  url "http://www.geuz.org/getdp/src/getdp-2.8.0-source.tgz"
+  sha256 "7941809d01b3b045f70382b719dc1bcfeea9d794ac075771a1e82be0960748dd"
+  head "https://geuz.org/svn/getdp/trunk", :using => GetdpSvnStrategy
 
-  head 'https://geuz.org/svn/getdp/trunk', :using => GmshSvnStrategy
+  bottle do
+    sha256 "0fe5768bc9c0f8bc248c8374046b6b35de0fad12d457a15f619941d6fa461cee" => :el_capitan
+    sha256 "cf606693962d6f06ecd55d1a6bf4053b0f6c7b5a360216e32602185275d1bf27" => :yosemite
+    sha256 "5dc87f5057fec43512cace0b0e3fc0c84752a9c01b8b238dbf7584d211f0135b" => :mavericks
+  end
 
-  option "without-check", "skip build-time tests (not recommended)"
+  option "without-test", "skip build-time tests (not recommended)"
+  deprecated_option "without-check" => "without-test"
 
   depends_on :fortran
   depends_on :mpi => [:cc, :cxx, :f90, :recommended]
-  depends_on "arpack" => :recommended
-  depends_on "petsc" => :recommended
-  depends_on "slepc" => :recommended
-  depends_on "gmsh" => :recommended
-  depends_on "gsl" => :recommended
-  depends_on "cmake" => :build
+  depends_on "arpack"   => :recommended
+  depends_on "gmsh"     => :recommended
+  depends_on "gsl"      => :recommended
+  depends_on "hdf5"     => :recommended
+  depends_on "metis"    => :recommended
+  depends_on "mumps"    => :recommended
+  depends_on "petsc"    => :recommended
+  depends_on "slepc"    => :recommended
+
+  depends_on "cmake"    => :build
 
   def install
-    if not build.head? and (build.with? "petsc" or build.with? "slepc")
-      onoe "stable is incompatible with PETSc/SLEPc 3.5.2. Build with --HEAD."
-      exit 1
-    end
     args = std_cmake_args
     args << "-DENABLE_BUILD_SHARED=ON"
     args << "-DENABLE_ARPACK=OFF" if build.without? "arpack"
@@ -43,17 +48,17 @@ class Getdp < Formula
     end
 
     if build.with? "slepc"
-      ENV["SLEPC_DIR"] = "#{Formula['slepc'].opt_prefix}/real"
+      ENV["SLEPC_DIR"] = "#{Formula["slepc"].opt_prefix}/real"
     else
       args << "-DENABLE_SLEPC=OFF"
     end
 
-    if (build.with? "petsc") or (build.with? "slepc")
+    if (build.with? "petsc") || (build.with? "slepc")
       args << "-DENABLE_MPI=ON" if build.with? :mpi
     end
 
     # Fixed test to work without access to gmsh
-    inreplace "CMakeLists.txt", "../../gmsh/bin/gmsh", "./getdp"
+    inreplace "CMakeLists.txt", "add_test(${TEST} ${TEST_BIN} ${TEST} - )", "add_test(${TEST} #{bin}/getdp ${TEST})"
 
     mkdir "build" do
       system "cmake", "..", *args
@@ -63,4 +68,7 @@ class Getdp < Formula
     end
   end
 
+  test do
+    system "#{bin}/getdp", "#{share}/doc/getdp/demos/magnet.pro"
+  end
 end

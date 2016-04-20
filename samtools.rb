@@ -1,49 +1,48 @@
-require 'formula'
-
 class Samtools < Formula
-  homepage 'http://samtools.sourceforge.net/'
-  #doi '10.1093/bioinformatics/btp352'
-  #tag "bioinformatics"
+  desc "Tools (written in C using htslib) for manipulating next-generation sequencing data"
+  homepage "http://www.htslib.org/"
+  # doi "10.1093/bioinformatics/btp352"
+  # tag "bioinformatics"
+
+  url "https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2"
+  sha256 "beea4003c795a0a25224656815b4036f6864b8753053ed30c590bb052b70b60e"
+
   head "https://github.com/samtools/samtools.git"
 
-  url "https://github.com/samtools/samtools/archive/1.1.tar.gz"
-  sha1 "ca446ec24eabd2f71605dde55a787f182cb50f13"
-
-  option 'with-dwgsim', 'Build with "Whole Genome Simulation"'
-
-  depends_on "htslib"
-
-  resource 'dwgsim' do
-    # http://sourceforge.net/apps/mediawiki/dnaa/index.php?title=Whole_Genome_Simulation
-    url 'https://downloads.sourceforge.net/project/dnaa/dwgsim/dwgsim-0.1.11.tar.gz'
-    sha1 'e0275122618fa38dae815d2b43c4da87614c67dd'
+  bottle do
+    cellar :any
+    sha256 "c6bb8308c4ffb995ca46ac6be8e7087c22e7e2dd6bdb801690802b2d4f089a52" => :el_capitan
+    sha256 "97447111d3ab5dce204761395afd600060ba36c8b47045a65a33b8efd10c4bb6" => :yosemite
+    sha256 "c6baa6fc3f29cdb96a9fdf59f832455f4dd2c6ed25801d4a09f6e8cb9c810b98" => :mavericks
   end
 
-  def install
-    inreplace "Makefile", "include $(HTSDIR)/htslib.mk", ""
-    htslib = Formula["htslib"].opt_prefix
-    system "make", "HTSDIR=#{htslib}/include", "HTSLIB=#{htslib}/lib/libhts.a"
+  option "with-dwgsim", "Build with Whole Genome Simulation"
+  option "without-curses", "Skip use of libcurses, for platforms without it, or different curses naming"
 
-    if build.with? 'dwgsim'
-      ohai "Building dwgsim"
-      samtools = pwd
-      resource('dwgsim').stage do
-        system "ln -s #{samtools} samtools"
-        system "make", "CC=#{ENV.cc}"
-        bin.install %w{dwgsim dwgsim_eval}
-      end
+  depends_on "htslib"
+  depends_on "dwgsim" => :optional
+
+  def install
+    htslib = Formula["htslib"].opt_prefix
+    if build.without? "curses"
+      ohai "Building without curses"
+      system "./configure", "--with-htslib=#{htslib}", "--without-curses"
+    else
+      system "./configure", "--with-htslib=#{htslib}"
     end
 
-    bin.install 'samtools'
-    bin.install %w{misc/maq2sam-long misc/maq2sam-short misc/md5fa misc/md5sum-lite misc/wgsim}
-    bin.install Dir['misc/*.pl']
-    lib.install 'libbam.a'
-    man1.install %w{samtools.1}
-    (share+'samtools').install %w{examples}
-    (include+'bam').install Dir['*.h']
+    system "make"
+
+    bin.install "samtools"
+    bin.install %w[misc/maq2sam-long misc/maq2sam-short misc/md5fa misc/md5sum-lite misc/wgsim]
+    bin.install Dir["misc/*.pl"]
+    lib.install "libbam.a"
+    man1.install %w[samtools.1]
+    (share+"samtools").install %w[examples]
+    (include+"bam").install Dir["*.h"]
   end
 
   test do
-    system 'samtools 2>&1 |grep -q samtools'
+    system "samtools 2>&1 |grep -q samtools"
   end
 end

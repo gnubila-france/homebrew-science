@@ -1,16 +1,24 @@
-require 'formula'
-
 class Blasr < Formula
-  homepage 'https://github.com/PacificBiosciences/blasr'
-  #doi '10.1186/1471-2105-13-238'
-  url 'https://github.com/PacificBiosciences/blasr/archive/smrtanalysis-2.1.tar.gz'
-  sha1 'ac6add1ba8a82cac2515da36c0ec53060c20ea0f'
-  head 'https://github.com/PacificBiosciences/blasr.git'
+  desc "PacBio long read aligner"
+  homepage "https://github.com/PacificBiosciences/blasr"
+  # doi "10.1186/1471-2105-13-238"
+  # tag "bioinformatics"
 
-  depends_on "hdf5" => "with-cxx"
+  url "https://github.com/PacificBiosciences/blasr/archive/smrtanalysis-2.2.tar.gz"
+  sha256 "bef789accf2662aed409b31227e029c61582d5dfe6a289043db4c1b27fd7ab12"
 
+  head "https://github.com/PacificBiosciences/blasr.git"
+
+  bottle do
+    cellar :any
+    sha256 "cd3242383848697bb8b2cb3e50098f34fbc3a775b0169b91145f053ed316583d" => :mountain_lion
+  end
+
+  depends_on "hdf5"
+
+  # https://github.com/PacificBiosciences/blasr/issues/28
   fails_with :clang do
-    build 503
+    build 602
     cause <<-EOS.undent
       error: destructor type 'HDFWriteBuffer<int>' in object
       destruction expression does not match the type
@@ -32,10 +40,14 @@ class Blasr < Formula
     system "make", "STATIC=",
       "HDF5INCLUDEDIR=#{hdf5.opt_include}",
       "HDF5LIBDIR=#{hdf5.opt_lib}"
-    system 'make', 'install', 'PREFIX=' + prefix
+
+    # Fix the error: install: mkdir /usr/local/Cellar/blasr/2.2/bin: exists
+    ENV.deparallelize
+
+    system "make", "install", "PREFIX=#{prefix}"
   end
 
   test do
-    system 'blasr'
+    system "#{bin}/blasr"
   end
 end

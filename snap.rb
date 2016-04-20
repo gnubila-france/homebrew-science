@@ -1,26 +1,36 @@
-require 'formula'
-
 class Snap < Formula
-  homepage 'http://korflab.ucdavis.edu/software.html'
-  #doi "10.1186/1471-2105-5-59"
-  version '2013-11-29'
-  url "http://korflab.ucdavis.edu/Software/snap-#{version}.tar.gz"
-  sha1 '0ff0612ecb7040dfaa58b4330396d025abc0b758'
+  desc "Gene prediction tool"
+  homepage "http://korflab.ucdavis.edu/software.html"
+  # doi "10.1186/1471-2105-5-59"
+  # tag "bioinformatics"
+
+  url "http://korflab.ucdavis.edu/Software/snap-2013-11-29.tar.gz"
+  version "2013-11-29"
+  sha256 "e2a236392d718376356fa743aa49a987aeacd660c6979cee67121e23aeffc66a"
+
+  bottle do
+    cellar :any_skip_relocation
+    revision 1
+    sha256 "71cb5dea75c27f6e4794e27b8e07af673465f6285b6a9b02ff01d9a51108c9bc" => :el_capitan
+    sha256 "6c6690240b7363db44f12dcb42bd8e71b00c4d6f4c543bc1dd6d8197e9a2b161" => :yosemite
+    sha256 "8844eab0a698e205b665ffe48fb5eaa18c30f83e1e7ed052232791a003ffc373" => :mavericks
+  end
 
   def install
-    system 'make'
-    bin.install *(%w[exonpairs fathom forge hmm-info snap] + Dir['*.pl'])
-    doc.install *%w[00README LICENSE example.zff ]
-    libexec.install *%w[DNA HMM Zoe]
+    system "make"
+    bin.install %w[exonpairs fathom forge hmm-info snap]
+    bin.install Dir["*.pl"]
+    doc.install %w[00README LICENSE example.zff]
+    prefix.install %w[DNA HMM Zoe]
   end
 
   def caveats; <<-EOS.undent
-    Set the ZOE environment variable:
-      export ZOE=#{opt_libexec}
+      Set the ZOE environment variable:
+        export ZOE=#{opt_prefix}
     EOS
   end
 
   test do
-    system 'snap -help'
+    system "#{bin}/snap", "-help"
   end
 end

@@ -1,21 +1,27 @@
-require "formula"
-
 class Hotspot < Formula
+  desc "Identify regions of local enrichment of short-read sequence tags"
   homepage "https://github.com/rthurman/hotspot"
   url "https://github.com/rthurman/hotspot/archive/v4.1.0.tar.gz"
-  sha1 "d1b40651eabadd7de6110ce49ae2580cc1c1021b"
+  sha256 "9ecdbba612b80f137b78314c23ac94aa6840d217bf4256faf8adee88a73fdd0c"
   head "https://github.com/rthurman/hotspot.git"
+
+  bottle do
+    cellar :any
+    sha256 "fc949fe55227e919164e64f7e6d6f9c1c7444cca515ae4159e0deb1219864ed2" => :yosemite
+    sha256 "5bd2cd5293c8e791e4e29f7bd85d9aba76a6eedbec03903f0e02722173398be2" => :mavericks
+    sha256 "e69620eb7ce1bf2614a081aa206cd4802099f83a53316b29bae31e94ad5412ea" => :mountain_lion
+  end
 
   depends_on "gsl"
 
   def install
     ENV.deparallelize
-    system "make -C hotspot-distr/hotspot-deploy"
+    system "make", "-C", "hotspot-distr/hotspot-deploy"
 
     inreplace "hotspot-distr/pipeline-scripts/test/runall.tokens.txt",
               "/full/path/to/hotspot-distr",
-              "#{share}"
-    share.install "hotspot-distr/pipeline-scripts", "hotspot-distr/data"
+              "#{pkgshare}"
+    pkgshare.install "hotspot-distr/pipeline-scripts", "hotspot-distr/data"
 
     bin.install Dir["hotspot-distr/hotspot-deploy/bin/*"]
     doc.install %w[LICENSE README.md]
@@ -23,7 +29,7 @@ class Hotspot < Formula
 
   def caveats; <<-EOS.undent
     Run the test suite (~1 hr):
-      #{share}/pipeline-scripts/test/runhotspot
+      #{opt_pkgshare}/pipeline-scripts/test/runhotspot
     EOS
   end
 end

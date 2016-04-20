@@ -1,20 +1,17 @@
-require "formula"
-
 class Uproc < Formula
   homepage "http://uproc.gobics.de/"
   head "https://github.com/gobics/uproc.git"
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
     cellar :any
-    sha1 "e85ca47439010ba2bbed0676569516018647b12d" => :yosemite
-    sha1 "a6d9496f7271755e9104ad7fa4af59476b982815" => :mavericks
-    sha1 "6216fa194d8413b905d58b94993abb2eac531b48" => :mountain_lion
+    sha256 "6e07dbb8062f34c6dbd5f550675371146f944579845ca172a54f9c6ba3c3a118" => :yosemite
+    sha256 "134344cdc203c2cf27b452e7920bdfa8ed127d206c203e5f96d809cdb5ff521f" => :mavericks
+    sha256 "e3396797b696c637784f3df6fab6435b0e5da41fa4cc002adee143092beae05a" => :mountain_lion
   end
 
-  #tag "bioinformatics"
+  # tag "bioinformatics"
 
   url "http://uproc.gobics.de/downloads/uproc/uproc-1.1.2.tar.gz"
-  sha1 "32acdf691001e93d3a00e5351fb876c6b71779a7"
+  sha256 "062898c2a9c14db39ba057a4168c0efcf2a7c651e47b9c98863d8ab6afe6b1ac"
 
   needs :openmp # => :recommended
 

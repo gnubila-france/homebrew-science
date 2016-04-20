@@ -1,18 +1,16 @@
-require "formula"
-
 class Netcdf < Formula
+  desc "Libraries and data formats for array-oriented scientific data"
   homepage "http://www.unidata.ucar.edu/software/netcdf"
-  url "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.2.tar.gz"
-  mirror "http://www.gfd-dennou.org/library/netcdf/unidata-mirror/netcdf-4.3.2.tar.gz"
-  sha1 "6e1bacab02e5220954fe0328d710ebb71c071d19"
-  revision 1
+  url "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz"
+  mirror "http://www.gfd-dennou.org/library/netcdf/unidata-mirror/netcdf-4.3.3.1.tar.gz"
+  sha256 "bdde3d8b0e48eed2948ead65f82c5cfb7590313bc32c4cf6c6546e4cea47ba19"
+  revision 4
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
     cellar :any
-    sha1 "af12e8d6b0cf4afee76f944ae97ccb174e297819" => :yosemite
-    sha1 "d20838cd139c3022429ba0fa28e4ba2f6ef2ae3c" => :mavericks
-    sha1 "a4857f759d7b05df9fb318c7f2a78b400e5c4db8" => :mountain_lion
+    sha256 "9417a3dfd9e47bf1f744964f4c515a5838f1101c04a8910d1db6b80f0c8fb39b" => :el_capitan
+    sha256 "de2a9557f2eec6ec682b4fef4ac6b2d12a461089267133e9d408d682cf3f404e" => :yosemite
+    sha256 "b807d5fd18583e30e8d00d5b754cf6ad6f5ccbd95e6d56f007b83c911911be22" => :mavericks
   end
 
   deprecated_option "enable-fortran" => "with-fortran"
@@ -28,29 +26,19 @@ class Netcdf < Formula
 
   resource "cxx" do
     url "https://github.com/Unidata/netcdf-cxx4/archive/v4.2.1.tar.gz"
-    sha1 "0bb4a0807f10060f98745e789b6dc06deddf30ff"
+    sha256 "bad56abfc99f321829070c04aebb377fc8942a4d09e5a3c88ad2b6547ed50ebc"
   end
 
   resource "cxx-compat" do
     url "http://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-cxx-4.2.tar.gz"
     mirror "http://www.gfd-dennou.org/arch/netcdf/unidata-mirror/netcdf-cxx-4.2.tar.gz"
-    sha1 "bab9b2d873acdddbdbf07ab35481cd0267a3363b"
+    sha256 "95ed6ab49a0ee001255eac4e44aacb5ca4ea96ba850c08337a3e4c9a0872ccd1"
   end
 
   resource "fortran" do
-    url "http://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-fortran-4.4.1.tar.gz"
-    mirror "http://www.gfd-dennou.org/arch/netcdf/unidata-mirror/netcdf-fortran-4.4.1.tar.gz"
-    sha1 "452a1b7ef12cbcace770dcc728a7b425cf7fb295"
-  end
-
-  # HDF5 1.8.13 removes symbols related to MPI POSIX VFD, leading to
-  # errors when linking hdf5 and netcdf5 such as "undefined reference to
-  # `_H5Pset_fapl_mpiposix`". This patch fixes those errors, and has been
-  # added upstream. It should be unnecessary once NetCDF releases a new
-  # stable version.
-  patch do
-    url "https://github.com/Unidata/netcdf-c/commit/435d8a03ed28bb5ad63aff12cbc6ab91531b6bc8.diff"
-    sha1 "770ee66026e4625b80711174600fb8c038b48f5e"
+    url "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.4.2.tar.gz"
+    mirror "http://www.gfd-dennou.org/arch/netcdf/unidata-mirror/netcdf-fortran-4.4.2.tar.gz"
+    sha256 "ad6249b6062df6f62f81d1cb2a072e3a4c595f27f11fe0c5a79726d1dad3143b"
   end
 
   def install
@@ -112,11 +100,29 @@ class Netcdf < Formula
 
     if build.with? "fortran"
       resource("fortran").stage do
+        # fixes "error while loading shared libraries: libnetcdf.so.7".
+        # see https://github.com/Homebrew/homebrew-science/issues/2521#issuecomment-121851582
+        # this should theoretically be enough: ENV.prepend "LDFLAGS", "-L#{lib}", but it is not.
+        ENV.prepend "LD_LIBRARY_PATH", "#{lib}"
         system "./configure", *common_args
         system "make"
         system "make", "check" if build.with? "check"
         system "make", "install"
       end
     end
+  end
+
+  test do
+    (testpath/"test.c").write <<-EOS.undent
+      #include <stdio.h>
+      #include "netcdf_meta.h"
+      int main()
+      {
+        printf(NC_VERSION);
+        return 0;
+      }
+    EOS
+    system ENV.cc, "test.c", "-L#{lib}", "-I#{include}", "-lnetcdf", "-o", "test"
+    assert_equal `./test`, version.to_s
   end
 end

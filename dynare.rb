@@ -1,44 +1,53 @@
-require "formula"
-
 class Dynare < Formula
   homepage "http://www.dynare.org"
-  url "https://www.dynare.org/release/source/dynare-4.4.3.tar.xz"
-  sha1 "3c99c3a957d02e53db62cba7566fdb1399438cfc"
+  revision 1
 
   option "with-matlab=", "Path to Matlab root directory (to build mex files)"
   option "with-matlab-version=", "Matlab version, e.g., 8.2 (to build mex files)"
   option "with-doc", "Build documentation"
   option "without-check", "Disable build-time checks (not recommended)"
 
+  stable do
+    url "https://www.dynare.org/release/source/dynare-4.4.3.tar.xz"
+    sha256 "d00f97f72bcad7486ec1d18640d44b607d91ff9f585c9b4e01d08b6a3deeae21"
+    depends_on "matlab2tikz"
+  end
+
+  head do
+    url "https://github.com/DynareTeam/dynare.git"
+    depends_on "automake" => :build
+    depends_on "flex"     => :build
+    depends_on "bison"    => :build
+  end
+
+  depends_on :tex    => :build
   depends_on "boost" => :build
   depends_on "xz"    => :build
   depends_on "fftw"
   depends_on "gsl"
   depends_on "libmatio"
-  depends_on "matlab2tikz"
   depends_on :fortran
 
-  depends_on :tex      => :build if build.with? "doc"
   depends_on "doxygen" => :build if build.with? "doc"
 
   depends_on "slicot" => ["with-default-integer-8"] if build.with? "matlab="
   depends_on "octave" => :recommended
 
   def install
-    args=%W[
-            --disable-debug
-            --disable-dependency-tracking
-            --disable-silent-rules
-            --prefix=#{prefix}
+    args = %W[
+      --disable-debug
+      --disable-dependency-tracking
+      --disable-silent-rules
+      --prefix=#{prefix}
     ]
     matlab_path = ARGV.value("with-matlab") || ""
     matlab_version = ARGV.value("with-matlab-version") || ""
-    if (matlab_path.empty? or matlab_version.empty?) and build.without? "octave"
-      onoe("You must build Dynare with Matlab and/or Octave support")
-      exit 1
+    if (matlab_path.empty? || matlab_version.empty?) && build.without?("octave")
+      raise "You must build Dynare with Matlab and/or Octave support"
     end
-    if matlab_path.empty? or matlab_version.empty?
-      if not (matlab_path.empty? and matlab_version.empty?)
+
+    if matlab_path.empty? || matlab_version.empty?
+      unless matlab_path.empty? && matlab_version.empty?
         opoo "Matlab support disabled: specify both Matlab path and version"
       end
       args << "--disable-matlab"
@@ -46,18 +55,20 @@ class Dynare < Formula
       args << "--with-matlab=#{matlab_path}"
       args << "MATLAB_VERSION=#{matlab_version}"
     end
+
     args << "--disable-octave" if build.without? "octave"
 
+    system "autoreconf", "-si" if build.head?
     system "./configure", *args
 
-    if build.with? "doc" and OS.mac?
+    if build.with?("doc") && OS.mac?
       inreplace "doc/Makefile", \
                 "$(TEXI2PDF) $(AM_V_texinfo) --build-dir=$(@:.pdf=.t2p) -o $@ $(AM_V_texidevnull)", \
                 "$(TEXI2PDF) $(AM_V_texinfo) --build-dir=$(@:.pdf=.t2p) $(AM_V_texidevnull)"
     end
 
     system "make", "pdf" if build.with? "doc"
-    system "make install"
+    system "make", "install"
 
     # Install documentation by hand
     if build.with? "doc"
@@ -85,14 +96,13 @@ class Dynare < Formula
     end
 
     if build.with? "matlab="
-      matlab_path = File.open(prefix / "matlab.config") {|f| f.gets.chomp}
+      matlab_path = File.open(prefix / "matlab.config") { |f| f.gets.chomp }
       system "#{matlab_path}/bin/matlab -nosplash -nodisplay " \
         "-r 'addpath #{opt_prefix}/lib/dynare/matlab; dynare bkk.mod console; exit'"
     end
   end
 
-  def caveats
-    s = <<-EOS.undent
+  def caveats; <<-EOS.undent
     To get started with dynare, open Matlab or Octave and type:
 
             addpath #{opt_prefix}/lib/dynare/matlab

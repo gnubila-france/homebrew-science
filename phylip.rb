@@ -1,12 +1,17 @@
-require "formula"
-
 class Phylip < Formula
   homepage "http://evolution.genetics.washington.edu/phylip.html"
-  #tag "bioinformatics"
-  #doi "10.1007/BF01734359"
+  # tag "bioinformatics"
+  # doi "10.1007/BF01734359"
 
   url "http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz"
-  sha1 "e3ac52ca37c3397f81bb9325ee21ca8e5a8a2fa4"
+  sha256 "cd0a452ca51922142ad06d585e2ef98565536a227cbd2bd47a2243af72c84a06"
+
+  bottle do
+    cellar :any
+    sha256 "de6dce855888ca1ea007f6492a104d80bd261579f9d2bb0320f98bedfa50cfc8" => :yosemite
+    sha256 "c13101048ff00f36319cbe601669275f2e79810fa67826f7850b71f05b714b3c" => :mavericks
+    sha256 "72d274eb537a6949a4832809b0912050ca25853f439c127f4ac0c7fe059e1768" => :mountain_lion
+  end
 
   def install
     cd "src" do
@@ -16,7 +21,7 @@ class Phylip < Formula
 
     rm Dir["#{libexec}/font*"]
     bin.install_symlink Dir["#{libexec}/*"] - Dir["#{libexec}/*.{so,jar,unx}"]
-    (share/"phylip").install ["phylip.html", "doc"]
+    pkgshare.install ["phylip.html", "doc"]
   end
 
   def caveats

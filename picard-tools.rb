@@ -1,22 +1,38 @@
-require 'formula'
-
 class PicardTools < Formula
-  homepage "http://broadinstitute.github.io/picard/"
-  url "https://github.com/broadinstitute/picard/releases/download/1.120/picard-tools-1.120.zip"
-  sha1 "355a9bdb9d11b1669ff340535307d481e985599d"
+  desc "Tools for manipulating HTS data and formats"
+  homepage "https://broadinstitute.github.io/picard/"
+  # tag "bioinformatics"
+
+  url "https://github.com/broadinstitute/picard/releases/download/2.1.1/picard-tools-2.1.1.zip"
+  sha256 "8862a27aaedf6a4d2405efaf005d3d0a760eff4046c569275c163a9d3011a576"
+
+  bottle do
+    cellar :any_skip_relocation
+    sha256 "ba34b255599802feca4996b7cfe7c619b4c5a0b99368f974dd6d2aaa3db8630e" => :el_capitan
+    sha256 "b4b3412c243acae498394393c0a61897d0440dc32b4b1240c784dfc68427d897" => :yosemite
+    sha256 "0065ca96c0051d196a5313d891ed2b2ffce6fe618c881a1c732d4a5b4790b0ac" => :mavericks
+  end
+
+  # head "https://github.com/broadinstitute/picard.git"
+
+  depends_on :java
 
   def install
-    (share/'java').install Dir['*.jar', "picard-tools-#{version}/*.jar"]
+    java = share/"java"
+    java.install Dir["*.jar"]
+    bin.write_jar_script java/"picard.jar", "picard"
+    lib.install "libIntelDeflater.so" if OS.linux?
   end
 
   def caveats
     <<-EOS.undent
-      The Java JAR files are installed to
-          #{HOMEBREW_PREFIX}/share/java
+      The Picard JAR files are installed to
+        #{HOMEBREW_PREFIX}/share/java
     EOS
   end
 
   test do
-    system "java -jar #{share}/java/ViewSam.jar --version"
+    system "java -jar #{share}/java/picard.jar -h 2>&1 |grep Picard"
+    system "#{bin}/picard -h 2>&1 |grep Picard"
   end
 end

@@ -1,21 +1,25 @@
-require 'formula'
-
 class Igv < Formula
-  homepage 'http://www.broadinstitute.org/software/igv'
-  #doi '10.1093/bib/bbs017'
-  head 'https://github.com/broadinstitute/IGV.git'
-  url 'http://www.broadinstitute.org/igv/projects/downloads/IGV_2.3.34.zip'
-  sha1 '1aeadbf2222f0adddd6b68b3171eb02184b7aa41'
+  desc "Interactive Genomics Viewer"
+  homepage "http://www.broadinstitute.org/software/igv"
+  # tag "bioinformatics"
+  # doi "10.1093/bib/bbs017"
+  url "http://www.broadinstitute.org/igv/projects/downloads/IGV_2.3.68.zip"
+  sha256 "763781a5c655d22dd2c07096079ba6eadb73ebde80a9f84ae9cdcea2b4921ee0"
+  head "https://github.com/broadinstitute/IGV.git"
+
+  bottle :unneeded
+
+  depends_on :java
 
   def install
-    inreplace 'igv.sh', /^prefix=.*/, 'prefix=' + libexec
-    libexec.install Dir['igv.sh', '*.jar']
-    bin.install_symlink '../libexec/igv.sh' => 'igv'
-    doc.install 'readme.txt'
+    inreplace "igv.sh", /^prefix=.*/, "prefix=#{prefix}"
+    prefix.install Dir["igv.sh", "*.jar"]
+    bin.install_symlink prefix/"igv.sh" => "igv"
+    doc.install "readme.txt"
   end
 
   test do
-    (testpath / 'script').write 'exit'
-    system 'igv -b script |grep -q IGV'
+    (testpath/"script").write "exit"
+    assert_match "IGV", `#{bin}/igv -b script`
   end
 end

@@ -1,18 +1,18 @@
-require "formula"
-
 class Igvtools < Formula
-  homepage "http://www.broadinstitute.org/software/igv"
-  url "http://www.broadinstitute.org/igv/projects/downloads/igvtools_2.3.32.zip"
-  sha1 "7de35e1ac3908174f99a76e1edd2134b5f1f13cf"
+  homepage "http://www.broadinstitute.org/software/igv/download"
+  # tag "bioinformatics"
+  url "http://www.broadinstitute.org/igv/projects/downloads/igvtools_2.3.48.zip"
+  sha256 "0ae8fc2f6500495ae84aa0232887d9466c73c188f5af91d64a089e5808d3a84d"
 
   def install
-    libexec.install "igvtools.jar"
-    bin.write_jar_script libexec/"igvtools.jar", "igvtools"
+    java = share/"java"
+    java.install "igvtools.jar"
+    bin.write_jar_script java/"igvtools.jar", "igvtools"
     doc.install "igvtools_readme.txt"
-    share.install "genomes"
+    pkgshare.install "genomes"
   end
 
   test do
-    system "igvtools |grep igvtools"
+    system "#{bin}/igvtools |grep igvtools"
   end
 end

@@ -1,29 +1,25 @@
-require "formula"
-
 class Rampart < Formula
   homepage "https://github.com/TGAC/RAMPART"
-  #tag "bioinformatics"
+  # tag "bioinformatics"
 
   head do
     url "https://github.com/TGAC/RAMPART.git", :branch => "develop"
     depends_on "maven" => :build
   end
 
-  url "https://github.com/TGAC/RAMPART/releases/download/Release-0.10.3/rampart-0.10.3.tar.gz"
-  sha1 "8f8c5db27e8088fbf03fc08222bfead6cf96fb11"
+  url "https://github.com/TGAC/RAMPART/releases/download/Release-0.11.0/rampart-0.11.0.tar.gz"
+  sha256 "f4e87ef410793906dc42df43f60ba9246ea68dee12c6bcaf30ca5a05f5a3a3fe"
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
     cellar :any
-    sha1 "6b27caaf40113844445985e31666374f7bb1bc4e" => :yosemite
-    sha1 "f865ca5e82b22b25bffba039624dad5d320ecdcb" => :mavericks
-    sha1 "04c62dd16e5e57028c4dc71c28efcc5d4cd0f707" => :mountain_lion
+    sha256 "654066a36c0df63e9955f7a105cac906cbbe78d55bc3f3e4de46b6bec29171c3" => :yosemite
+    sha256 "b694c65ccac7ff4aed57d2e4823150d08acf9db6fbc51e24ca559b671462a21d" => :mavericks
+    sha256 "810d7b76559426a412b7ab83f270475f26eef4cf652b6b17716291e6d5b2d7ca" => :mountain_lion
   end
 
-  depends_on :java => "1.7"
+  depends_on :java => "1.7+"
 
   # Dataset improvement
-  depends_on "musket" => :optional
   depends_on "sickle" => :optional
   # quake (see below)
 
@@ -33,7 +29,6 @@ class Rampart < Formula
   # Assemblers
   depends_on "abyss" => :recommended
   depends_on "allpaths-lg" => :optional
-  depends_on "platanus" => :optional
   depends_on "soapdenovo" => :optional
   depends_on "velvet" => :recommended
   depends_on "spades" => :optional

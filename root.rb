@@ -1,24 +1,23 @@
-require "formula"
-
 class Root < Formula
+  desc "Object oriented framework for large scale data analysis"
   homepage "http://root.cern.ch"
-  version "5.34.24"
-  sha1 "b765ee81b4b4f3e99978a237b2a4db9da0b96337"
-  url "ftp://root.cern.ch/root/root_v#{version}.source.tar.gz"
-  mirror "http://ftp.riken.jp/pub/ROOT/root_v#{version}.source.tar.gz"
+  version "5.34.34"
+  url "https://root.cern.ch/download/root_v#{version}.source.tar.gz"
+  sha256 "8c1faf893ed3b279f3500368b3dcd2087352020a69d3055c4d36726e7f6acd58"
+  revision 1
   head "https://github.com/root-mirror/root.git", :branch => "v5-34-00-patches"
 
   bottle do
-    root_url "https://downloads.sf.net/project/machomebrew/Bottles/science"
-    sha1 "212376e0d131b903952a9873d9c78ac821911a43" => :yosemite
-    sha1 "1b96cf40824848791c6bd012dcb0bc38d2626ff2" => :mavericks
-    sha1 "952baf8273bd6ed4a245e016c637abb9d401f559" => :mountain_lion
+    sha256 "613f35d0a27605432ad78ccad9569cc4e99e09e2e5be0fe5c4e8df79b20e920e" => :el_capitan
+    sha256 "0ca5c7f65a53ac75c82187bde58f59ecb4167bcfaa399bf7af4672b61e5e4043" => :yosemite
+    sha256 "da95281b991b743e86acf1dc33e50fab813c2d44f0d236884090e25de69207e5" => :mavericks
   end
 
   option "with-qt", "Build with Qt graphics backend and GSI's Qt integration"
 
   depends_on "openssl"
   depends_on "xrootd" => :recommended
+  depends_on "gsl" => :recommended
   depends_on "fftw" => :optional
   depends_on "qt" => [:optional, "with-qt3support"]
   depends_on :x11 => :optional
@@ -33,9 +32,6 @@ class Root < Formula
                   "man/man1/setup-pq2.1", "README/INSTALL", "README/README"],
       /bin.thisroot/, "libexec/thisroot"
 
-    # Determine architecture
-    arch = MacOS.prefer_64_bit? ? "macosx64" : "macosx"
-
     # N.B. that it is absolutely essential to specify
     # the --etcdir flag to the configure script.  This is
     # due to a long-known issue with ROOT where it will
@@ -43,14 +39,16 @@ class Root < Formula
     # is not specified:
     # http://root.cern.ch/phpBB3/viewtopic.php?f=3&t=15072
     args = %W[
-      #{arch}
       --all
       --enable-builtin-glew
       --enable-builtin-freetype
       --prefix=#{prefix}
       --etcdir=#{prefix}/etc/root
       --mandir=#{man}
+      --elispdir=#{share}/emacs/site-lisp/#{name}
     ]
+
+    args << "--enable-mathmore" if build.with? "gsl"
 
     if build.with? "x11"
       args << "--disable-cocoa"
@@ -76,11 +74,6 @@ class Root < Formula
     mv Dir["#{bin}/*.*sh"], libexec
   end
 
-  test do
-    system "make", "-C", "#{prefix}/test/", "hsimple"
-    system "#{prefix}/test/hsimple"
-  end
-
   def caveats; <<-EOS.undent
     Because ROOT depends on several installation-dependent
     environment variables to function properly, you should
@@ -88,10 +81,27 @@ class Root < Formula
     script (.bashrc/.profile/etc.), or call them directly
     before using ROOT.
 
+    For bash users:
+      . $(brew --prefix root)/libexec/thisroot.sh
+    For zsh users:
+      pushd $(brew --prefix root) >/dev/null; . libexec/thisroot.sh; popd >/dev/null
     For csh/tcsh users:
       source `brew --prefix root`/libexec/thisroot.csh
-    For bash/zsh users:
-      . $(brew --prefix root)/libexec/thisroot.sh
     EOS
+  end
+
+  test do
+    (testpath/"test.C").write <<-EOS.undent
+      #include <iostream>
+      void test() {
+        std::cout << "Hello, world!" << std::endl;
+      }
+    EOS
+    (testpath/"test.bash").write <<-EOS.undent
+      . #{libexec}/thisroot.sh
+      root -l -b -n -q test.C
+    EOS
+    assert_equal "\nProcessing test.C...\nHello, world!\n",
+      `/bin/bash test.bash`
   end
 end

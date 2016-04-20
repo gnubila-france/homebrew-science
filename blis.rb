@@ -1,22 +1,30 @@
-require "formula"
-
 class Blis < Formula
-  homepage "https://code.google.com/p/blis/"
-  url "https://github.com/flame/blis/archive/0.1.6.tar.gz"
-  sha1 "176eeb497f785506112f49cd01c3d732e2111068"
+  desc "BLAS-like Library Instantiation Software Framework"
+  homepage "https://github.com/flame/blis"
+  url "https://github.com/flame/blis/archive/0.1.8.tar.gz"
+  sha256 "b649a13ccdf0040e44bdbd5cf39e7c9a24cc0ac41ded1ad10681fe9bcce4cc89"
   head "https://github.com/flame/blis.git"
 
+  bottle do
+    cellar :any
+    sha256 "9a172421f66db44f87d010c06a1bb9b892cd537e4dee53a6626a43fbc30edc8c" => :el_capitan
+    sha256 "48e1a717c837523b9bb8ce7cbf0a570adeffe5d1e97364ebc1dfcd2fb4313221" => :yosemite
+    sha256 "97d8f1705db1212ac45c3feb6c9aba7e43af45299930f7955562d02ee1f6186c" => :mavericks
+  end
+
+  deprecated_option "without-check" => "without-test"
+
   option "with-configuration=",
-      "BLIS framework configuration name (default: reference)\n" +
-      "\tSee https://code.google.com/p/blis/wiki/BuildSystem" +
-      "#Step_1:_Choose_a_framework_configuration"
-  option "without-check", "Skip build-time tests (not recommended)"
+      "BLIS framework configuration name (default: reference)\n" \
+      "\thttps://github.com/flame/blis/wiki/BuildSystem" \
+      "#step-1-choose-a-framework-configuration"
+  option "without-test", "Skip build-time tests (not recommended)"
   option "without-shared", "Do not build as a shared library"
   option "without-static", "Do not build as a static library"
 
   def install
-    if build.without? "dynamic" and build.without? "static"
-      raise "Must build either a static or dynamic library"
+    if build.without?("shared") && build.without?("static")
+      raise "Must build either a static or a shared library"
     end
 
     system "./configure",
@@ -27,13 +35,13 @@ class Blis < Formula
       prefix.install "output.testsuite"
     end
     system "make", "install",
-        "BLIS_ENABLE_DYNAMIC_BUILD=" + (build.with?("dynamic") ? "yes" : "no"),
+        "BLIS_ENABLE_DYNAMIC_BUILD=" + (build.with?("shared") ? "yes" : "no"),
         "BLIS_ENABLE_STATIC_BUILD=" + (build.with?("static") ? "yes" : "no")
   end
 
   def caveats
-    if not ARGV.value("with-configuration")
-        <<-EOS.undent
+    unless ARGV.value("with-configuration")
+      <<-EOS.undent
         BLIS was built with the reference configuration.  Performance is
         highly-dependent on the selected configuration and may not be optimal
         for this system.  Please consider specifying the --with-configuration
@@ -41,5 +49,4 @@ class Blis < Formula
         EOS
     end
   end
-
 end
