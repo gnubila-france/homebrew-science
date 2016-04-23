@@ -3,12 +3,13 @@ class SuiteSparse < Formula
   homepage "http://faculty.cse.tamu.edu/davis/suitesparse.html"
   url "http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-4.5.1.tar.gz"
   sha256 "ac4524b9f69c4f8c2652d720b146c92a414c1943f86d46df49b4ff8377ae8752"
+  revision 1
 
   bottle do
     cellar :any
-    sha256 "93778c77d8469b36ad662a4641372a8217292a84c1b1b88bc3ef608da91c2fc6" => :el_capitan
-    sha256 "c2ee49f3e0407a783317b9357d10d3f26e6037b8a3b75b3b945c87119e4045e5" => :yosemite
-    sha256 "29b928946c42998bb59292044c4c29498998e424ef8edd046f0e004bff13a813" => :mavericks
+    sha256 "5d55f334d74e82d49fd8aa8714b77b5e48d45363416b88c99e4f7fff07b57e79" => :el_capitan
+    sha256 "eabf4335b58d2e12b71205714975dfd07603237fabc9ab18e3071513dabd5774" => :yosemite
+    sha256 "3976e6b7ca8ba6f0795097f2de0f15e98bdaf32de8fb9bbaff21db7a9cc1da71" => :mavericks
   end
 
   option "with-matlab", "Install Matlab interfaces and tools"
@@ -18,7 +19,7 @@ class SuiteSparse < Formula
   option "without-test", "Do not perform build-time tests (not recommended)"
 
   depends_on "tbb" => :recommended
-  depends_on "openblas" => :optional
+  depends_on "openblas" => (OS.mac? ? :optional : :recommended)
 
   # SuiteSparse must be compiled with metis 5 and ships with metis-5.1.0.
   # We prefer to use Homebrew metis.
@@ -26,6 +27,9 @@ class SuiteSparse < Formula
 
   depends_on :fortran if build.with? "matlab"
   needs :openmp if build.with? "openmp"
+
+  # libtbb isn't linked in.
+  patch DATA
 
   def install
     cflags = [ENV.cflags.to_s]
@@ -46,13 +50,13 @@ class SuiteSparse < Formula
     make_args += ["SPQR_CONFIG=-DHAVE_TBB",
                   "TBB=-L#{Formula["tbb"].opt_lib} -ltbb"] if build.with? "tbb"
 
-    # SuiteSparse is shipped with metis-5.1.0 but it can use Homebrew's version by
-    # setting MY_METIS_LIB and MY_METIS_INC variables.
+    # SuiteSparse ships with metis5 but we use the Homebrew version
     make_args += ["MY_METIS_LIB=-L#{Formula["metis"].opt_lib} -lmetis",
                   "MY_METIS_INC=#{Formula["metis"].opt_include}"]
 
     # Only building libraries
     system "make", "library", *make_args
+    system "make", "install", "INSTALL=#{prefix}", *make_args
 
     if build.with? "matlab"
       matlab = ARGV.value("with-matlab-path") || "matlab"
@@ -67,19 +71,19 @@ class SuiteSparse < Formula
 
       (pkgshare/"matlab").install "MATLAB_Tools"
       (pkgshare/"matlab").install "RBio/RBio"
-      (doc/"matlab").install Dir["MATLAB_Tools/Factorize/Doc/*"]
     end
 
-    prefix.install "include"
-    so = OS.mac? ? "dylib" : "so"
-    lib.install Dir["lib/*.#{so}"]
+    # Install static libs.
+    %w[AMD BTF CAMD CCOLAMD CHOLMOD COLAMD CSparse CXSparse KLU LDL RBio SPQR UMFPACK].each do |m|
+      lib.install Dir["#{m}/Lib/*.a"]
+    end
+    lib.install "SuiteSparse_config/libsuitesparseconfig.a"
 
-    # Install docs and demos
+    # Install demos
     %w[AMD CAMD CCOLAMD CHOLMOD COLAMD CXSparse KLU LDL SPQR UMFPACK].each do |m|
       (pkgshare/"demo/#{m}").install Dir["#{m}/Demo/*"]
     end
     (pkgshare/"demo/CXSparse").install "CXSparse/Matrix"
-    doc.install Dir["share/doc/suitesparse-*/*"]
   end
 
   def caveats
@@ -131,3 +135,27 @@ class SuiteSparse < Formula
     end
   end
 end
+
+__END__
+diff --git a/SPQR/Lib/Makefile b/SPQR/Lib/Makefile
+index d6d56f5..e530e23 100644
+--- a/SPQR/Lib/Makefile
++++ b/SPQR/Lib/Makefile
+@@ -13,7 +13,7 @@ ccode: all
+ include ../../SuiteSparse_config/SuiteSparse_config.mk
+
+ # SPQR depends on CHOLMOD, AMD, COLAMD, LAPACK, the BLAS and SuiteSparse_config
+-LDLIBS += -lamd -lcolamd -lcholmod -lsuitesparseconfig $(LAPACK) $(BLAS)
++LDLIBS += -lamd -lcolamd -lcholmod -lsuitesparseconfig $(TBB) $(LAPACK) $(BLAS)
+
+ # compile and install in SuiteSparse/lib
+ library:
+@@ -246,7 +246,7 @@ $(INSTALL_LIB)/$(SO_TARGET): $(OBJ)
+	@mkdir -p $(INSTALL_LIB)
+	@mkdir -p $(INSTALL_INCLUDE)
+	@mkdir -p $(INSTALL_DOC)
+-	$(CC) $(SO_OPTS) $^ -o $@ $(LDLIBS)
++	$(CXX) $(SO_OPTS) $^ -o $@ $(LDLIBS)
+	( cd $(INSTALL_LIB) ; ln -sf $(SO_TARGET) $(SO_PLAIN) )
+	( cd $(INSTALL_LIB) ; ln -sf $(SO_TARGET) $(SO_MAIN) )
+	$(CP) ../Include/SuiteSparseQR.hpp $(INSTALL_INCLUDE)
