@@ -21,6 +21,11 @@ class Openblas < Formula
   def install
     ENV["DYNAMIC_ARCH"] = "1" if build.bottle?
 
+    # Fix a potential problem with path detect if gcc is located inside
+    # a path which contains directories with the - char
+    system "sed -i 's#cross_suffix =.*#cross_suffix = \"#{HOMEBREW_PREFIX}/bin/\";#' ./c_check"
+
+
     # Must call in two steps
     system "make", "FC=#{ENV["FC"]}", "libs", "netlib", "shared"
     system "make", "FC=#{ENV["FC"]}", "tests"
