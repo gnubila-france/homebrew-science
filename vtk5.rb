@@ -38,7 +38,6 @@ class Vtk5 < Formula
   depends_on "jpeg" => :recommended
   depends_on "libpng" => :recommended
   depends_on "libtiff" => :recommended
-  depends_on 'libxml2' => :recommended
 
   keg_only "Different versions of the same library"
 
@@ -63,23 +62,13 @@ class Vtk5 < Formula
       -DVTK_USE_TK=OFF
       -DBUILD_TESTING=OFF
       -DBUILD_SHARED_LIBS=ON
+      -DIOKit:FILEPATH=#{MacOS.sdk_path}/System/Library/Frameworks/IOKit.framework
       -DCMAKE_INSTALL_RPATH:STRING=#{libdir}
       -DCMAKE_INSTALL_NAME_DIR:STRING=#{libdir}
       -DVTK_USE_SYSTEM_EXPAT=ON
       -DVTK_USE_SYSTEM_LIBXML2=ON
       -DVTK_USE_SYSTEM_ZLIB=ON
     ]
-
-    if build.with? "libxml2"
-      args << "-DLIBXML2_LIBRARIES='#{Formula["libxml2"].lib}/libxml2.so'"
-      args << "-DLIBXML2_INCLUDE_DIR='#{Formula["libxml2"].include}/libxml2'"
-    else
-      args << "-DVTK_USE_SYSTEM_LIBXML2=ON"
-    end
-
-    if OS.mac?
-      args << "-DIOKit:FILEPATH=#{MacOS.sdk_path}/System/Library/Frameworks/IOKit.framework"
-    end
 
     args << "-DBUILD_EXAMPLES=" + ((build.with? "examples") ? "ON" : "OFF")
 
@@ -96,29 +85,14 @@ class Vtk5 < Formula
       args << "-DVTK_USE_COCOA=OFF"
       args << "-DVTK_USE_X=ON"
     else
-#Disable patchas do not compile with OSMESA
-#error: 'OSMesaContext' does not name a type
-#The build will switch to X11
-      if OS.mac?
-        args << "-DVTK_USE_COCOA=ON"
-      else
-#Disable patch as it does not compile with OSMESA
-#error: 'OSMesaContext' does not name a type
-#Switch to X11 in any case
-#        # On Linux disable everything, will use OSMESA
-#        args << '-DVTK_USE_COCOA=OFF'
-#	args << '-DVTK_USE_X=OFF'
-        args << '-DVTK_USE_X=ON'
-      end
+      args << "-DVTK_USE_COCOA=ON"
     end
 
-    if OS.mac?
-      unless MacOS::CLT.installed?
-        # We are facing an Xcode-only installation, and we have to keep
-        # vtk from using its internal Tk headers (that differ from OSX's).
-        args << "-DTK_INCLUDE_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers"
-        args << "-DTK_INTERNAL_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers/tk-private"
-      end
+    unless MacOS::CLT.installed?
+      # We are facing an Xcode-only installation, and we have to keep
+      # vtk from using its internal Tk headers (that differ from OSX's).
+      args << "-DTK_INCLUDE_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers"
+      args << "-DTK_INTERNAL_PATH:PATH=#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Headers/tk-private"
     end
 
     args << "-DVTK_USE_BOOST=ON" if build.with? "boost"
@@ -134,11 +108,7 @@ class Vtk5 < Formula
       if build.with? "python"
         args << "-DVTK_WRAP_PYTHON=ON"
         # CMake picks up the system's python dylib, even if we have a brewed one.
-        if OS.mac?
-          args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.dylib'"
-        else
-          args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.so'"
-        end
+        args << "-DPYTHON_LIBRARY='#{`python-config --prefix`.chomp}/lib/libpython2.7.dylib'"
         # Set the prefix for the python bindings to the Cellar
         args << "-DVTK_PYTHON_SETUP_ARGS:STRING='--prefix=#{prefix} --single-version-externally-managed --record=installed.txt'"
         if build.with? "pyqt"
@@ -146,8 +116,14 @@ class Vtk5 < Formula
           args << "-DSIP_PYQT_DIR=" # {HOMEBREW_PREFIX}/share/sip""
         end
       end
+      if build.with? "x11"
+        # prevent "error: ‘GLintptr’ has not been declared"
+        # see: http://stackoverflow.com/questions/28761702/getting-error-glintptr-has-not-been-declared-when-building-vtk-on-linux
+        inreplace buildpath/"Rendering/vtkXOpenGLRenderWindow.cxx", "//#define GLX_GLXEXT_LEGACY", "#define GLX_GLXEXT_LEGACY"
+      end
       args << ".."
       system "cmake", *args
+      ENV["LD_LIBRARY_PATH"] = buildpath/"build/bin" if OS.linux?
       system "make"
       system "make", "install"
     end
